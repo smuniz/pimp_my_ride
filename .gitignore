@@ -1,3 +1,15 @@
+# IDA Pro backup files
+*.id[b012]
+*.i64
+*.nam
+*.til
+
+# Vim session files
+*.vimsess
+
+# Vim backup files
+*.sw[op]
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
