@@ -511,7 +511,8 @@ class PimpMyRide(object):
         """..."""
         try:
             for i in self.__cs.disasm(str(opcodes), addr):
-                print "    0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str)
+                print "    %s 0x%x:\t%s\t%s" % (
+                        " ".join(["%02X" % ord(x) for x in str(i.bytes)]), i.address, i.mnemonic, i.op_str)
         except cs.CsError, err:
             raise PimpMyRideException(e)
 
