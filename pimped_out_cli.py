@@ -13,6 +13,7 @@ __description__ = "Pimped out multi-architecture CPU emulator"
 from sys import argv, exit
 
 from pimp_my_ride import *
+#from idaapi import *
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -26,8 +27,8 @@ def _autodetect_architecture():
     
     """
     #architecture = get_idp_name()
-    architecture = "pc"
-    bits = 64 # FIXME
+    architecture = "x86"
+    bits = 64 # FIXME : detect this automatically
 
     #info = get_inf_structure()
 
@@ -49,24 +50,27 @@ def main():
 
     if len(argv) == 1:
         usage()
-        exit(1)
+        return
 
     #
     # Obtain the memory ranges where we're going to operate.
     #
-    #fn = get_func(ScreenEA())
-    #mem_address = fn.startEA
-    #mem_length = 1 * 1024 * 1024
     image_filename = argv[1]
 
-    fd = open(image_filename, 'rb')
+    try:
+        fd = open(image_filename, 'rb')
+    except IOError, err:
+        print "[-] Invalid filename specified"
+        return
+
     image = ELFFile(fd)
 
-    # FIXME
-    #mem_address = 0x4004D6 # image.header['e_entry']
-    mem_address = 0x04004FD
-    mem_length = 4 * PAGE_ALIGN
+    # FIXME : automate this
+    #start_address = 0x4004D6 # image.header['e_entry']
+    start_address = 0x04004FD
 
+    #fn = get_func(ScreenEA())
+    #mem_address = fn.startEA
     #refs = [ref.frm for ref in XrefsTo(fn.startEA, 0)]
 
     #if len(refs) == 0:
@@ -100,19 +104,25 @@ def main():
     print "[+] Configuring emulator..."
     emu = PimpMyRide(architecture, bits, endian)
 
+    emu.add_memory_area(addr, len(code))
     emu.code = (code, addr)
-    emu.memory_address = mem_address
-    emu.memory_length = mem_length
+
+    emu.start_address = start_address
     emu.return_address = ret_address
 
     # tracing all instructions with customized callback
     emu.add_code_hook(emu.hook_code)
 
-    print "[+] Initiating emulation..."
-    emu.start()
+    try:
+        print "[+] Initiating emulation..."
+        emu.start()
 
-    print "[+] Emulation finished."
-    emu.result()
+        print "[+] Emulation finished."
+        emu.result()
+
+    except PimpMyRideException, err:
+        print "[-] Error : %s" % err
+        return
 
 if __name__ == "__main__":
     print "%s v%s\n" % (__description__, __version__)

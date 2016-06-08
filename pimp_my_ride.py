@@ -26,16 +26,16 @@ try:
 except ImportError, err:
     print "Missing 'capstone engine' module."
 
-
-#from idaapi import *
-
+#
+# List of supported architectures
+#
 PPC_ARCH = 0
 MIPS_ARCH = 1
 ARM_ARCH = 2
 X86_ARCH = 3
 X86_64_ARCH = 4
 
-PAGE_ALIGN = 0x1000 # 4k
+PAGE_SIZE = 0x1000 # Default page size is 4KB
 
 COMPILE_GCC = 0
 COMPILE_MSVC = 1
@@ -97,9 +97,10 @@ class PimpMyRide(object):
                 cur_mode = uc.UC_MODE_ARM
 
             else:
-                raise PimpMyRideException("Unknown {}bit for ARM architecture".format(bits))
+                raise PimpMyRideException(
+                        "Unknown %dbit for ARM architecture" % bits)
 
-        elif architecture == "pc":
+        elif architecture == "x86":
 
             cur_arch = uc.UC_ARCH_X86
             cs_arch = cs.CS_ARCH_X86
@@ -114,14 +115,14 @@ class PimpMyRide(object):
                 cur_mode = uc.UC_MODE_16
                 cs_mode = cs.CS_MODE_16
             else:
-                raise PimpMyRideException("Unknown {}bit for X86 architecture".format(bits))
+                raise PimpMyRideException("Unknown %dbit for X86 architecture" % bits)
 
         else:
             raise PimpMyRideException(
                 "Unsupported architecture %s" % architecture)
 
         if self.__debug:
-            print "[DBG] Architecture: {} {}bits".format(architecture, bits)
+            print "[DBG] Architecture: %s %dbits" % (architecture.upper(), bits)
 
         self.architecture = cur_arch
         self.mode = cur_mode
@@ -176,7 +177,7 @@ class PimpMyRide(object):
     @property
     def start_address(self):
         """Return the initial start address."""
-        start self._start_address
+        return self._start_address
 
     @start_address.setter
     def start_address(self, address):
@@ -207,10 +208,13 @@ class PimpMyRide(object):
         if self.mode is None:
             raise PimpMyRideException("Mode not specified")
 
+        if self.start_address is None:
+            raise PimpMyRideException("Return address not specified")
+
         if self.return_address is None:
             raise PimpMyRideException("Return address not specified")
 
-        if len(self.__memory_areas) :
+        if not len(self.__memory_areas):
             raise PimpMyRideException("No memory areas specified")
 
         self.__uc = uc.Uc(self.architecture, self.mode) # create new Unicorn
@@ -276,6 +280,7 @@ class PimpMyRide(object):
                             UC_X86_REG_R8, UC_X86_REG_R9]
                 elif self.compiler == COMPILE_MSVC:
                     self.REG_ARGS = [UC_X86_REG_RCX, UC_X86_REG_RDX, UC_X86_REG_R8, UC_X86_REG_R9]
+
         elif self.architecture == uc.UC_ARCH_ARM:
             if self.mode == uc.UC_MODE_ARM:
                 self.step = 4
@@ -288,6 +293,7 @@ class PimpMyRide(object):
             self.REG_RA = UC_ARM_REG_LR
             self.REG_RES = UC_ARM_REG_R0
             self.REG_ARGS = [UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3]
+
         elif self.architecture == uc.UC_ARCH_ARM64:
             self.step = 8 
             self.pack_fmt = '<Q'
@@ -300,51 +306,59 @@ class PimpMyRide(object):
 
     def _align_address(self, address):
         """Align the specified address to a page boundary."""
-        return address // PAGE_ALIGN * PAGE_ALIGN
+        return address // PAGE_SIZE * PAGE_SIZE
 
     def __initialize_memory(self):
         """Initialize the emulator memory with the appropriate ranges and
         contents.
         """
-        stack_size = (self.ssize+1) * PAGE_ALIGN
+        # Initialize the stack memory.
+        stack_size = (self.ssize+1) * PAGE_SIZE
 
-        self.memory_map(self.stack, stack_size)
-        self.memory_write(self.stack, "\x00" * stack_size)
+        self._memory_map(self.stack, stack_size)
+        self._memory_write(self.stack, "\x00" * stack_size)
 
-        sp = self.stack + self.ssize * PAGE_ALIGN
+        sp = self.stack + self.ssize * PAGE_SIZE
         self.__uc.reg_write(self.REG_SP, sp)
 
         # Iterate through all the memory areas specified to map them all and
         # write content to them if necessary.
         for address, size in self.__memory_areas:
-            size *= 2 # FIXME
-            address_aligned = self._align_address(self.memory_address)
+            size = self._align_address(size) + PAGE_SIZE # FIXME : horrible kludge! Will break contignous sections.
+            address_aligned = self._align_address(address)
 
+            self._memory_map(address_aligned, size, uc.UC_PROT_ALL)
 
-            self.memory_map(address_aligned, size, uc.UC_PROT_ALL)#self.memory_length)
-            self.memory_write(self.code[1], self.code[0])
+        # Add the content to every previously mapped memory area.
+        # TODO
+        self._memory_write(self.code[1], self.code[0])
 
-    def memory_write(self, addr, data):
-        """..."""
+    def _memory_write(self, address, content):
+        """Set the content of a memory area with user-defined content."""
         if self.__debug:
-            print "[DBG] Writting 0x%08X (size 0x%X)" % (addr, len(data))
-        self.__uc.mem_write(addr, data)
+            print "[DBG] Writting %s(0x%X) bytes at 0x%08X" % (
+                    len(content), len(content), address)
 
-    def memory_map(self, addr, size, perm=None):
-        """..."""
+        # This will fail is the memory area was not yet defined in Unicorn.
+        self.__uc.mem_write(address, content)
+
+    def _memory_map(self, address, size, perm=None):
+        """Map the specified address to a new memory area."""
+        # This function should not be called directrly. Use add_memory_area
+        # instead.
         if self.__debug:
-            print "[DBG] Mapping 0x%08X - 0x%08X (size 0x%X)" % (addr, addr + size, size)
+            print "[DBG] Mapping 0x%08X - 0x%08X (size 0x%X)" % (address, address + size, size)
         if perm:
-            self.__uc.mem_map(addr, size, perm)
+            self.__uc.mem_map(address, size, perm)
         else:
-            self.__uc.mem_map(addr, size)
+            self.__uc.mem_map(address, size)
 
     def _get_bit(self, value, offset):
-        """..."""
+        """Get the specified bit value from a bigger number."""
         mask = 1 << offset
         return 1 if (value & mask) > 0 else 0
 
-    def _show_regs(self):
+    def __show_regs(self):
         """..."""
         print("[+] Registers:")
         try:
@@ -464,7 +478,7 @@ class PimpMyRide(object):
                 print "[DBG] Emulation error : %s" % err
                 #print format_exc()
 
-                self._show_regs()
+                self.__show_regs()
 
             raise PimpMyRideException(err)
 
@@ -478,7 +492,7 @@ class PimpMyRide(object):
 
     def result(self):
         """Return the emulation results (if any)."""
-        self._show_regs()
+        self.__show_regs()
 
     def _show_disasm_inst(self, opcodes, addr):
         """..."""
@@ -492,7 +506,7 @@ class PimpMyRide(object):
         """Built-in callback for instructions tracing."""
         print(">>> Tracing instruction at 0x%x, instruction size = %u" %(address, size))
         try:
-            self._show_regs()
+            self.__show_regs()
 
             opcodes = _uc.mem_read(address, size)
 
