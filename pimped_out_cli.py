@@ -105,7 +105,7 @@ def main():
     emu = PimpMyRide(architecture, bits, endian)
 
     emu.add_memory_area(addr, len(code))
-    emu.code = (code, addr)
+    emu.add_memory_content(addr, code)
 
     emu.start_address = start_address
     emu.return_address = ret_address

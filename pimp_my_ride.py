@@ -68,6 +68,7 @@ class PimpMyRide(object):
         self.return_address = None
 
         self.__memory_areas = []
+        self.__memory_contents = []
 
         self.stack = self._align_address(stack)
         self.ssize = ssize
@@ -164,6 +165,16 @@ class PimpMyRide(object):
         """Store the current mode under execution."""
         self._mode = mode
 
+    def add_memory_content(self, address, content):
+        """Add a code region for the code emulation."""
+        # Add the areas as a tuple (addr, size) unless we can think of a better
+        # way to do it.
+        # TODO : Validate area is valid for current architecture
+        if not len(content):
+            raise PimpMyRideException(
+                    "Invalid memory content size specified (%d)" % size)
+        self.__memory_contents.append([address, content])
+
     def add_memory_area(self, address, size):
         """Add a memory region for the code emulation."""
         # Add the areas as a tuple (addr, size) unless we can think of a better
@@ -199,9 +210,6 @@ class PimpMyRide(object):
         #
         # Initialize Unicorn's operational parameters.
         #
-        if not self.code:
-            raise PimpMyRideException("Code not specified")
-
         if not self.architecture:
             raise PimpMyRideException("Architecture not specified")
 
@@ -216,6 +224,9 @@ class PimpMyRide(object):
 
         if not len(self.__memory_areas):
             raise PimpMyRideException("No memory areas specified")
+
+        if not len(self.__memory_contents):
+            raise PimpMyRideException("No memory contents specified")
 
         self.__uc = uc.Uc(self.architecture, self.mode) # create new Unicorn
                                                         # instance.
@@ -330,13 +341,15 @@ class PimpMyRide(object):
             self._memory_map(address_aligned, size, uc.UC_PROT_ALL)
 
         # Add the content to every previously mapped memory area.
-        # TODO
-        self._memory_write(self.code[1], self.code[0])
+        # Iterate through all the memory areas specified to map them all and
+        # write content to them if necessary.
+        for address, content in self.__memory_contents:
+            self._memory_write(address, content)
 
     def _memory_write(self, address, content):
         """Set the content of a memory area with user-defined content."""
         if self.__debug:
-            print "[DBG] Writting %s(0x%X) bytes at 0x%08X" % (
+            print "[DBG] Writting %d(0x%X) bytes at 0x%08X" % (
                     len(content), len(content), address)
 
         # This will fail is the memory area was not yet defined in Unicorn.
