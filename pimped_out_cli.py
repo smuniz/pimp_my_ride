@@ -15,6 +15,16 @@ from sys import argv, exit
 from pimp_my_ride import *
 #from idaapi import *
 
+from pyOCDgdb import GDBServer
+#from pyOCD.board import MbedBoard
+
+# Find a connected mbed device
+#board = MbedBoard.chooseBoard()
+#
+## Start a GDB server
+#gdb = GDBServer(board, 3333)
+
+
 try:
     from elftools.elf.elffile import ELFFile
 except ImportError, err:
