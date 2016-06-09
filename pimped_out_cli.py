@@ -15,13 +15,40 @@ from sys import argv, exit
 from pimp_my_ride import *
 #from idaapi import *
 
-from pyOCDgdb import GDBServer
-#from pyOCD.board import MbedBoard
+from target import Target
+#from board import Board
+from gdb_server import GDBServer
+
+class PimpedOutTarget(Target):
+
+    def __init__(self):
+        super(PimpedOutTarget, self).__init__(None)
+
 
 # Find a connected mbed device
-#board = MbedBoard.chooseBoard()
-#
-## Start a GDB server
+class PimpedOutBoard(object):
+
+    def __init__(self):
+        super(PimpedOutBoard, self).__init__()
+        self.target = PimpedOutTarget()
+
+    def init(self):
+        """
+        Initialize the board: interface, transport and target
+        """
+        pass
+
+    def uninit(self, resume = True ):
+        """
+        Uninitialize the board: interface, transport and target.
+        This function resumes the target
+        """
+        pass
+
+
+board = PimpedOutBoard()
+
+# Start a GDB server
 #gdb = GDBServer(board, 3333)
 
 

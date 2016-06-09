@@ -16,8 +16,8 @@
 """
 
 import logging, threading, socket
-from pyOCD.target.target import TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
-from pyDAPLink import TransferError
+#from pyOCD.target.target import TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
+#from pyDAPLink import TransferError
 from utility import hexStringToIntList, hexEncode, hexDecode
 from struct import unpack
 from time import sleep, time
@@ -231,8 +231,8 @@ class GDBServer(threading.Thread):
         elif msg[1] == 'k':
             return self.kill(), 1, 1
 
-        elif msg[1] == 'm':
-            return self.getMemory(msg[2:]), 1, 0
+        #elif msg[1] == 'm':
+        #    return self.getMemory(msg[2:]), 1, 0
 
         elif msg[1] == 'M': # write memory with hex data
             return self.writeMemoryHex(msg[2:]), 1, 0
@@ -455,29 +455,29 @@ class GDBServer(threading.Thread):
         return data
 
 
-    def getMemory(self, data):
-        split = data.split(',')
-        addr = int(split[0], 16)
-        length = split[1].split('#')[0]
-        length = int(length,16)
+    #def getMemory(self, data):
+    #    split = data.split(',')
+    #    addr = int(split[0], 16)
+    #    length = split[1].split('#')[0]
+    #    length = int(length,16)
 
-        if LOG_MEM:
-            logging.debug("GDB getMem: addr=%x len=%x", addr, length)
+    #    if LOG_MEM:
+    #        logging.debug("GDB getMem: addr=%x len=%x", addr, length)
 
-        try:
-            val = ''
-            #mem = self.target.readBlockMemoryUnaligned8(addr, length)
-            ## Flush so an exception is thrown now if invalid memory was accesses
-            #self.target.flush()
-            #for x in mem:
-            #    if x >= 0x10:
-            #        val += hex(x)[2:4]
-            #    else:
-            #        val += '0' + hex(x)[2:3]
-        except TransferError:
-            logging.debug("getMemory failed at 0x%x" % addr)
-            val = 'E01' #EPERM
-        return self.createRSPPacket(val)
+    #    try:
+    #        val = ''
+    #        #mem = self.target.readBlockMemoryUnaligned8(addr, length)
+    #        ## Flush so an exception is thrown now if invalid memory was accesses
+    #        #self.target.flush()
+    #        #for x in mem:
+    #        #    if x >= 0x10:
+    #        #        val += hex(x)[2:4]
+    #        #    else:
+    #        #        val += '0' + hex(x)[2:3]
+    #    except TransferError:
+    #        logging.debug("getMemory failed at 0x%x" % addr)
+    #        val = 'E01' #EPERM
+    #    return self.createRSPPacket(val)
 
     def writeMemoryHex(self, data):
         split = data.split(',')
