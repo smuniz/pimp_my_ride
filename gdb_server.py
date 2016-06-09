@@ -37,7 +37,7 @@ class GDBServer(threading.Thread):
         threading.Thread.__init__(self)
         self.board = board
         self.target = board.target
-        self.flash = board.flash
+        #self.flash = board.flash
         self.abstract_socket = None
         self.wss_server = None
         self.port = 0
@@ -46,9 +46,10 @@ class GDBServer(threading.Thread):
         else:
             self.port = port_urlWSS
         self.break_at_hardfault = bool(options.get('break_at_hardfault', True))
-        self.board.target.setVectorCatchFault(self.break_at_hardfault)
+        # XXX : is this needed
+        #self.board.target.setVectorCatchFault(self.break_at_hardfault)
         self.break_on_reset = options.get('break_on_reset', False)
-        self.board.target.setVectorCatchReset(self.break_on_reset)
+        #self.board.target.setVectorCatchReset(self.break_on_reset)
         self.step_into_interrupt = options.get('step_into_interrupt', False)
         self.persist = options.get('persist', False)
         self.soft_bkpt_as_hard = options.get('soft_bkpt_as_hard', False)
@@ -59,7 +60,7 @@ class GDBServer(threading.Thread):
         self.send_acks = True
         self.clear_send_acks = False
         self.gdb_features = []
-        self.flashBuilder = None
+        #self.flashBuilder = None
         self.conn = None
         self.lock = threading.Lock()
         self.shutdown_event = threading.Event()
@@ -84,15 +85,15 @@ class GDBServer(threading.Thread):
             logging.info("GDB server thread killed")
         self.board.uninit()
 
-    def setBoard(self, board, stop = True):
-        self.lock.acquire()
-        if stop:
-            self.restart()
-        self.board = board
-        self.target = board.target
-        self.flash = board.flash
-        self.lock.release()
-        return
+    #def setBoard(self, board, stop = True):
+    #    self.lock.acquire()
+    #    if stop:
+    #        self.restart()
+    #    self.board = board
+    #    self.target = board.target
+    #    self.flash = board.flash
+    #    self.lock.release()
+    #    return
 
     def run(self):
         self.timeOfLastPacket = time()

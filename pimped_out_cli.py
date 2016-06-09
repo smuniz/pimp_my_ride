@@ -49,7 +49,10 @@ class PimpedOutBoard(object):
 board = PimpedOutBoard()
 
 # Start a GDB server
-#gdb = GDBServer(board, 3333)
+gdb = GDBServer(board, 3333)
+
+#while gdb.isAlive():
+#    gdb.join(timeout=0.5)
 
 
 try:
