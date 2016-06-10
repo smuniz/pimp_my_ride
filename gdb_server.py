@@ -1,4 +1,4 @@
-"""
+"""?
  mbed CMSIS-DAP debugger
  Copyright (c) 2006-2015 ARM Limited
 
@@ -28,25 +28,33 @@ from protocol import Socket, WebSocket
 LOG_MEM = False # Log memory accesses.
 LOG_ACK = False # Log ack or nak.
 
+
 class GDBServer(threading.Thread):
     """
     This class start a GDB server listening a gdb connection on a specific port.
     It implements the RSP (Remote Serial Protocol).
     """
+
     def __init__(self, board, port_urlWSS, options = {}):
+
         threading.Thread.__init__(self)
+
+        # Initialize the board with the respective target.
         self.board = board
         self.target = board.target
+
         #self.flash = board.flash
         self.abstract_socket = None
         self.wss_server = None
         self.port = 0
+
         if isinstance(port_urlWSS, str) == True:
             self.wss_server = port_urlWSS
         else:
             self.port = port_urlWSS
+
         self.break_at_hardfault = bool(options.get('break_at_hardfault', True))
-        # XXX : is this needed
+        # XXX : is this needed?
         #self.board.target.setVectorCatchFault(self.break_at_hardfault)
         self.break_on_reset = options.get('break_on_reset', False)
         #self.board.target.setVectorCatchReset(self.break_on_reset)
@@ -66,6 +74,7 @@ class GDBServer(threading.Thread):
         self.shutdown_event = threading.Event()
         self.detach_event = threading.Event()
         self.quit = False
+
         if self.wss_server == None:
             self.abstract_socket = Socket(self.port, self.packet_size)
         else:

@@ -12,12 +12,19 @@ __description__ = "Pimped out multi-architecture CPU emulator"
 
 from sys import argv, exit
 
-from pimp_my_ride import *
+try:
+    from pimp_my_ride import *
+except ImportError, err:
+    print "[-] Import Error : %s" % err
+    exit(1)
+
 #from idaapi import *
 
 from target import Target
 #from board import Board
 from gdb_server import GDBServer
+
+__all__ = ["Pimped"]
 
 class PimpedOutTarget(Target):
 
@@ -150,8 +157,8 @@ def main():
     emu.start_address = start_address
     emu.return_address = ret_address
 
-    # tracing all instructions with customized callback
-    emu.add_code_hook(emu.hook_code)
+    # Tracing all instructions with internal callback.
+    emu.trace_instructions()
 
     try:
         print "[+] Initiating emulation..."

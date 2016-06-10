@@ -11,11 +11,15 @@ __status__      = "Development"
 __description__ = "Pimped out multi-architecture CPU emulator"
 
 from traceback import format_exc
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 try:
     import unicorn as uc
 except ImportError, err:
-    print "Missing 'unicorn engine' module."
+    logging.critical("Missing 'unicorn engine' module.")
+    raise ImportError(err)
 
 from unicorn.arm64_const import *
 from unicorn.arm_const import *
@@ -24,7 +28,9 @@ from unicorn.x86_const import *
 try:
     import capstone as cs
 except ImportError, err:
-    print "Missing 'capstone engine' module."
+    logging.critical("Missing 'capstone engine' module.")
+
+__all__ = ["PimpMyRide", "PimpMyRideException"]
 
 #
 # List of supported architectures
@@ -54,9 +60,9 @@ class PimpMyRide(object):
     """
 
     def __init__(self, architecture, bits, endian, compiler=COMPILE_GCC, \
-        stack=0xf000000, ssize=3):
+        stack=0xf000000, ssize=3, debug=True):
 
-        self.__debug = True
+        logging.basicConfig(level=logging.DEBUG)
 
         self.__uc = None  # Unicorn instance.
 
@@ -122,8 +128,8 @@ class PimpMyRide(object):
             raise PimpMyRideException(
                 "Unsupported architecture %s" % architecture)
 
-        if self.__debug:
-            print "[DBG] Architecture: %s %dbits" % (architecture.upper(), bits)
+        logging.debug("Architecture: %s %dbits" % (
+                architecture.upper(), bits))
 
         self.architecture = cur_arch
         self.mode = cur_mode
@@ -252,9 +258,8 @@ class PimpMyRide(object):
         #
         self.__initialize_registers()
 
-        #print "*" * 80
         #for i in self.__cs.disasm(self.code, self.memory_address):
-        #    print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
+        #    logging.debug("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
 
         #
         # Proceed to the emulation phase.
@@ -348,9 +353,8 @@ class PimpMyRide(object):
 
     def _memory_write(self, address, content):
         """Set the content of a memory area with user-defined content."""
-        if self.__debug:
-            print "[DBG] Writting %d(0x%X) bytes at 0x%08X" % (
-                    len(content), len(content), address)
+        logging.debug("Writting %d(0x%X) bytes at 0x%08X" % (
+            len(content), len(content), address))
 
         # This will fail is the memory area was not yet defined in Unicorn.
         self.__uc.mem_write(address, content)
@@ -359,8 +363,9 @@ class PimpMyRide(object):
         """Map the specified address to a new memory area."""
         # This function should not be called directrly. Use add_memory_area
         # instead.
-        if self.__debug:
-            print "[DBG] Mapping 0x%08X - 0x%08X (size 0x%X)" % (address, address + size, size)
+        logging.debug("Mapping 0x%08X - 0x%08X (size 0x%X)" % (
+            address, address + size, size))
+
         if perm:
             self.__uc.mem_map(address, size, perm)
         else:
@@ -373,7 +378,7 @@ class PimpMyRide(object):
 
     def __show_regs(self):
         """..."""
-        print("[+] Registers:")
+        logging.debug("Registers:")
         try:
             if self.mode == uc.UC_MODE_16:
                 ax = self.__uc.reg_read(UC_X86_REG_AX)
@@ -387,9 +392,9 @@ class PimpMyRide(object):
                 ip = self.__uc.reg_read(UC_X86_REG_PC)
                 eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
 
-                print("    AX = 0x%04x BX = 0x%04x CX = 0x%04x DX = 0x%04x" % (ax, bx, cx, dx))
-                print("    DI = 0x%04x SI = 0x%04x BP = 0x%04x SP = 0x%04x" % (di, si, bp, sp))
-                print("    IP = 0x%04x" % eip)     
+                logging.debug("    AX = 0x%04x BX = 0x%04x CX = 0x%04x DX = 0x%04x" % (ax, bx, cx, dx))
+                logging.debug("    DI = 0x%04x SI = 0x%04x BP = 0x%04x SP = 0x%04x" % (di, si, bp, sp))
+                logging.debug("    IP = 0x%04x" % eip)     
 
             elif self.mode == uc.UC_MODE_32:
                 eax = self.__uc.reg_read(UC_X86_REG_EAX)
@@ -403,9 +408,9 @@ class PimpMyRide(object):
                 eip = self.__uc.reg_read(UC_X86_REG_EIP)
                 eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
 
-                print("    EAX = 0x%08x EBX = 0x%08x ECX = 0x%08x EDX = 0x%08x" % (eax, ebx, ecx, edx))
-                print("    EDI = 0x%08x ESI = 0x%08x EBP = 0x%08x ESP = 0x%08x" % (edi, esi, ebp, esp))
-                print("    EIP = 0x%08x" % eip)
+                logging.debug("    EAX = 0x%08x EBX = 0x%08x ECX = 0x%08x EDX = 0x%08x" % (eax, ebx, ecx, edx))
+                logging.debug("    EDI = 0x%08x ESI = 0x%08x EBP = 0x%08x ESP = 0x%08x" % (edi, esi, ebp, esp))
+                logging.debug("    EIP = 0x%08x" % eip)
 
             elif self.mode == uc.UC_MODE_64:
                 rax = self.__uc.reg_read(UC_X86_REG_RAX)
@@ -427,14 +432,14 @@ class PimpMyRide(object):
                 r15 = self.__uc.reg_read(UC_X86_REG_R15)
                 eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
 
-                print("    RAX = 0x%016x RBX = 0x%016x RCX = 0x%016x RDX = 0x%016x" % (rax, rbx, rcx, rdx))
-                print("    RDI = 0x%016x RSI = 0x%016x RBP = 0x%016x RSP = 0x%016x" % (rdi, rsi, rbp, rsp))
-                print("    R$8 = 0x%016x R9  = 0x%016x R10 = 0x%016x R11 = 0x%016x" % (r8, r9, r10, r11))
-                print("    R12 = 0x%016x R13 = 0x%016x R14 = 0x%016x R15 = 0x%016x" % (r12, r13, r14, r15))
-                print("    RIP = 0x%016x" % rip)
+                logging.debug("    RAX = 0x%016x RBX = 0x%016x RCX = 0x%016x RDX = 0x%016x" % (rax, rbx, rcx, rdx))
+                logging.debug("    RDI = 0x%016x RSI = 0x%016x RBP = 0x%016x RSP = 0x%016x" % (rdi, rsi, rbp, rsp))
+                logging.debug("    R$8 = 0x%016x R9  = 0x%016x R10 = 0x%016x R11 = 0x%016x" % (r8, r9, r10, r11))
+                logging.debug("    R12 = 0x%016x R13 = 0x%016x R14 = 0x%016x R15 = 0x%016x" % (r12, r13, r14, r15))
+                logging.debug("    RIP = 0x%016x" % rip)
 
-            print("    EFLAGS:")
-            print("    CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d " \
+            logging.debug("    EFLAGS:")
+            logging.debug("    CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d " \
                     "NT=%d RF=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d"
                     % (self._get_bit(eflags, 0),
                        self._get_bit(eflags, 2),
@@ -455,15 +460,14 @@ class PimpMyRide(object):
                        self._get_bit(eflags, 21)))
 
         except uc.UcError as e:
-            #print("Exception: %s" % e)
+            #logging.debug("Exception: %s" % e)
             raise PimpMyRideException(e)
 
     def __initialize_hooks(self):
         """Commit all the hooks specified by the user."""
         # Add code hooks (if any).
         for hook, cb in self.__hooks.iteritems():
-            if self.__debug:
-                print "[DBG] Adding CODE hook : %s" % cb
+            logging.debug("Adding CODE hook : %s" % cb)
             self.__uc.hook_add(hook, cb)
 
         #TODO Add more hooks
@@ -487,17 +491,12 @@ class PimpMyRide(object):
                                 count)
 
         except uc.UcError, err:
-            if self.__debug:
-                print "[DBG] Emulation error : %s" % err
-                #print format_exc()
+            logging.debug("Emulation error : %s" % err)
+                #logging.debug(format_exc())
 
-                self.__show_regs()
+            self.__show_regs()
 
             raise PimpMyRideException(err)
-
-    def add_code_hook(self, callback_fn):
-        """Store user-specified callback function for the code hook."""
-        self.__hooks[uc.UC_HOOK_CODE] = callback_fn
 
     def write_register(self, register, value):
         """Write the specified value into the specified regiuster."""
@@ -511,34 +510,46 @@ class PimpMyRide(object):
         """..."""
         try:
             for i in self.__cs.disasm(str(opcodes), addr):
-                print "    %s 0x%x:\t%s\t%s" % (
-                        " ".join(["%02X" % ord(x) for x in str(i.bytes)]), i.address, i.mnemonic, i.op_str)
+                logging.info("    %s 0x%x:\t%s\t%s" % (
+                        " ".join(
+                            ["%02X" % ord(x) for x in str(i.bytes)]), i.address, i.mnemonic, i.op_str))
         except cs.CsError, err:
             raise PimpMyRideException(e)
 
-    def hook_code(self, _uc, address, size, user_data):
+    def add_code_hook(self, callback_fn):
+        """Store user-specified callback function for the instruction tracing."""
+        self.__hooks[uc.UC_HOOK_CODE] = callback_fn
+
+    def trace_instructions(self):
+        """Request the emulator to trace every executed instruction."""
+        # TODO Enhance this code to differentiate internal callback from
+        # user-defined hooks.
+        logging.debug("Internal code trace enabled.")
+        self.add_code_hook(self.__code_callback)
+
+    def __code_callback(self, _uc, address, size, user_data):
         """Built-in callback for instructions tracing."""
-        print(">>> Tracing instruction at 0x%x, instruction size = %u" %(address, size))
+        logging.debug("Tracing instruction at 0x%x, instruction size = %u" %(address, size))
         try:
             self.__show_regs()
 
             opcodes = _uc.mem_read(address, size)
 
-            print ""
+            logging.info("")
             self._show_disasm_inst(opcodes, address)
-            print ""
+            logging.info("")
 
-            #TODO : call user-defined function now?
+            # TODO : call user-defined function now?
         except uc.UcError as err:
-            print "Error (CODE hook): %s" % err
+            logging.error("Error (CODE hook): %s" % err)
 
-    def _hook_mem_invalid(self, uc, access, address, size, value, user_data):
+    def __memory_access_invalid_callback(self, uc, access, address, size, value, user_data):
         """Built-in callback for invalid memory accesses (READ or WRITE, FETCH)"""
         try:
             # FIXME : finish this
-            print "[HOOK] Memory access invalid at 0x%08X" % address
+            logging.debug("Memory access invalid at 0x%08X" % address)
 
-            #TODO : call user-defined function now?
+            # TODO : call user-defined function now?
         except uc.UcError as err:
-            print "Error (MEMORY hook): %s" % err
+            logging.error("Error (MEMORY hook): %s" % err)
 

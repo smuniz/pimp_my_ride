@@ -1,20 +1,13 @@
-"""
- mbed CMSIS-DAP debugger
- Copyright (c) 2006-2013 ARM Limited
+# -*- coding: utf-8 -*-
+_author__       = "Sebastian 'topo' Muniz"
+__copyright__   = "Copyright 2016, Recurity Labs GmbH"
+__credits__     = []
+__license__     = "GPL"
+__version__     = "0.1"
+__maintainer__  = "Sebastian Muniz"
+__email__       = "sebastianmuniz@gmail.com"
+__status__      = "Development"
+__description__ = "Pimped out multi-architecture CPU emulator"
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-"""
-
+from pimp_my_ride import *
 from gdb_server import GDBServer
-
-#from ._version import version as __version__
