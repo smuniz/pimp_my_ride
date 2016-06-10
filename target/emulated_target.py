@@ -14,8 +14,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from target import Target
-import signals
+from xml.etree.ElementTree import Element, SubElement, tostring
+import logging
+import struct
+
+from .target import Target
+from .target import TARGET_RUNNING, TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
+from gdbserver import signals
+from utility import conversion
 
 # Maps the fault code found in the IPSR to a GDB signal value.
 FAULT = [
@@ -44,6 +50,9 @@ class PimpedOutTarget(Target):
 
     def info(self, request):
         return
+
+    def flush(self):
+        self.transport.flush()
 
     def readIDCode(self):
         return
