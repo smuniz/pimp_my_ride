@@ -62,7 +62,7 @@ class PimpMyRide(object):
         handler.setLevel(log_level)
         handler.setFormatter(colorlog.ColoredFormatter(log_format))
 
-        self.logger = colorlog.getLogger("Emulator")
+        self.logger = colorlog.getLogger(type(self).__name__)
         self.logger.setLevel(log_level)
         self.logger.addHandler(handler)
 
@@ -211,6 +211,11 @@ class PimpMyRide(object):
     def return_address(self, address):
         """Store the return address."""
         self._return_address = address
+
+    def stop(self):
+        """Stop the emulation phase."""
+        # TODO
+        pass
 
     def start(self):
         """Start the emulation phase with the parameters previously defined."""

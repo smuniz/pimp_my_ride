@@ -17,41 +17,39 @@ import logging
 
 try:
     from pimp_my_ride import *
+
+    from emulated_target import PimpedOutTarget
+    #from board import Board
+    from gdb_server import GDBServer
+
 except ImportError, err:
     print "Import Error : %s" % err
     exit(1)
 
-from target import Target
-#from board import Board
-from gdb_server import GDBServer
 
 __all__ = ["Pimped"]
 
-class PimpedOutTarget(Target):
 
-    def __init__(self):
-        super(PimpedOutTarget, self).__init__(None)
-
-
-# Find a connected mbed device
 class PimpedOutBoard(object):
 
-    def __init__(self):
+    def __init__(self, emu):
         super(PimpedOutBoard, self).__init__()
-        self.target = PimpedOutTarget()
+        self.target = PimpedOutTarget(emu)
+        self.emu = emu
 
     def init(self):
-        """
-        Initialize the board: interface, transport and target
-        """
-        pass
+        """Initialize the board: interface, transport and target."""
+        print "[+] Initiating emulation..."
+        self.emu.start()
 
     def uninit(self, resume = True ):
-        """
-        Uninitialize the board: interface, transport and target.
+        """Uninitialize the board: interface, transport and target.
+
         This function resumes the target
         """
-        pass
+        print "[+] Emulation finished."
+        #self.emu.result()
+        self.emu.stop()
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -93,11 +91,8 @@ def get_gdb_server_settings(args):
         #'hide_programming_progress' : args.hide_progress,
         #'fast_program' : args.fast_program,
         'port_urlWSS' : args.port_number,
+        'log_level' : LOG_LEVELS.get(args.log_level),
     }
-
-def setup_logging(args):
-    level = LOG_LEVELS.get(args.log_level, logging.NOTSET)
-    logging.basicConfig(level=level)
 
 def main():
 
@@ -182,26 +177,21 @@ def main():
         # Set tracing all instructions with internal callback.
         emu.trace_instructions()
 
-        print "[+] Initiating emulation..."
-        emu.start()
-
-        print "[+] Emulation finished."
-        emu.result()
-
-        board = PimpedOutBoard()
+        board = PimpedOutBoard(emu)
 
         print "[+] Initializing GDB server..."
         gdb = GDBServer(board, gdb_server_settings)
 
-        #while gdb.isAlive():
-        #    gdb.join(timeout=0.5)
+        while gdb.isAlive():
+            gdb.join(timeout=0.5)
 
     except PimpMyRideException, err:
         print "[-] Error : %s" % err
         return
 
     except KeyboardInterrupt:
-        pass
+        print ""
+        print "[+] Termination requested..."
 
     except Exception as e:
         print "[-] Uncaught exception : %s" % e
