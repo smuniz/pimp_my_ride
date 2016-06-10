@@ -253,8 +253,8 @@ class GDBServer(threading.Thread):
         elif msg[1] == 'P':
             return self.writeRegister(msg[2:]), 1, 0
 
-        #elif msg[1] == 'q':
-        #    return self.handleQuery(msg[2:]), 1, 0
+        elif msg[1] == 'q':
+            return self.handleQuery(msg[2:]), 1, 0
 
         #elif msg[1] == 'Q':
         #    return self.handleGeneralSet(msg[2:]), 1, 0
@@ -563,6 +563,8 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket("OK")
 
     def handleQuery(self, msg):
+        """Handle query message from RSP client."""
+
         query = msg.split(':')
         logging.debug('GDB received query: %s', query)
 
@@ -570,123 +572,126 @@ class GDBServer(threading.Thread):
             logging.error('GDB received query packet malformed')
             return None
 
-        #if query[0] == 'Supported':
-        #    # Save features sent by gdb.
-        #    self.gdb_features = query[1].split(';')
+        if query[0] == 'Supported':
+            # Save features sent by gdb.
+            self.gdb_features = query[1].split(';')
 
-        #    # Build our list of features.
-        #    features = ['qXfer:features:read+', 'QStartNoAckMode+']
-        #    features.append('PacketSize=' + hex(self.packet_size)[2:])
-        #    if hasattr(self.target, 'memoryMapXML'):
-        #        features.append('qXfer:memory-map:read+')
-        #    resp = ';'.join(features)
-        #    return self.createRSPPacket(resp)
+            # Build our list of features.
+            features = []
+            features.append('qXfer:features:read+')
+            #features.append('QStartNoAckMode+')
+            features.append('PacketSize=' + hex(self.packet_size)[2:])
+            if hasattr(self.target, 'memoryMapXML'):
+                features.append('qXfer:memory-map:read+')
+            resp = ';'.join(features)
+            return self.createRSPPacket(resp)
 
-        #elif query[0] == 'Xfer':
+        elif query[0] == 'Xfer':
 
-        #    if query[1] == 'features' and query[2] == 'read' and \
-        #       query[3] == 'target.xml':
-        #        data = query[4].split(',')
-        #        resp = self.handleQueryXML('read_feature', int(data[0], 16), int(data[1].split('#')[0], 16))
-        #        return self.createRSPPacket(resp)
+            if query[1] == 'features' and query[2] == 'read' and \
+               query[3] == 'target.xml':
+                data = query[4].split(',')
+                resp = self.handleQueryXML('read_feature', int(data[0], 16), int(data[1].split('#')[0], 16))
+                return self.createRSPPacket(resp)
 
-        #    elif query[1] == 'memory-map' and query[2] == 'read':
-        #        data = query[4].split(',')
-        #        resp = self.handleQueryXML('memory_map', int(data[0], 16), int(data[1].split('#')[0], 16))
-        #        return self.createRSPPacket(resp)
+            elif query[1] == 'memory-map' and query[2] == 'read':
+                data = query[4].split(',')
+                resp = self.handleQueryXML('memory_map', int(data[0], 16), int(data[1].split('#')[0], 16))
+                return self.createRSPPacket(resp)
 
-        #    else:
-        #        return None
+            else:
+                return None
 
-        #elif query[0] == 'C#b4':
-        #    return self.createRSPPacket("")
+        elif query[0] == 'C#b4':
+            return self.createRSPPacket("")
 
-        #elif query[0].find('Attached') != -1:
-        #    return self.createRSPPacket("1")
+        elif query[0].find('Attached') != -1:
+            return self.createRSPPacket("1")
 
-        #elif query[0].find('TStatus') != -1:
-        #    return self.createRSPPacket("")
+        elif query[0].find('TStatus') != -1:
+            return self.createRSPPacket("")
 
-        #elif query[0].find('Tf') != -1:
-        #    return self.createRSPPacket("")
+        elif query[0].find('Tf') != -1:
+            return self.createRSPPacket("")
 
-        #elif 'Offsets' in query[0]:
-        #    resp = "Text=0;Data=0;Bss=0"
-        #    return self.createRSPPacket(resp)
+        elif 'Offsets' in query[0]:
+            resp = "Text=0;Data=0;Bss=0"
+            return self.createRSPPacket(resp)
 
-        #elif 'Symbol' in query[0]:
-        #    resp = "OK"
-        #    return self.createRSPPacket(resp)
+        elif 'Symbol' in query[0]:
+            resp = "OK"
+            return self.createRSPPacket(resp)
 
-        #elif query[0].startswith('Rcmd,'):
-        #    cmd = hexDecode(query[0][5:].split('#')[0])
-        #    logging.debug('Remote command: %s', cmd)
+        elif query[0].startswith('Rcmd,'):
+            cmd = hexDecode(query[0][5:].split('#')[0])
+            logging.debug('Remote command: %s', cmd)
 
-        #    safecmd = {
-        #        'reset' : ['Reset target', 0x1],
-        #        'halt'  : ['Halt target', 0x2],
-        #        'resume': ['Resume target', 0x4],
-        #        'help'  : ['Display this help', 0x80],
-        #    }
-        #    resultMask = 0x00
-        #    if cmd == 'help':
-        #        resp = ''
-        #        for k,v in safecmd.items():
-        #            resp += '%s\t%s\n' % (k,v[0])
-        #        resp = hexEncode(resp)
-        #    else:
-        #        cmdList = cmd.split(' ')
-        #        #check whether all the cmds is valid cmd for monitor
-        #        for cmd_sub in cmdList:
-        #            if not cmd_sub in safecmd:
-        #                #error cmd for monitor
-        #                logging.warning("Invalid mon command '%s'", cmd)
-        #                resp = 'Invalid Command: "%s"\n' % cmd
-        #                resp = hexEncode(resp)
-        #                return self.createRSPPacket(resp)
-        #            else:
-        #                resultMask = resultMask | safecmd[cmd_sub][1]
-        #        #if it's a single cmd, just launch it!
-        #        if len(cmdList) == 1:
-        #            tmp = eval ('self.target.%s()' % cmd_sub)
-        #            logging.debug(tmp)
-        #            resp = "OK"
-        #        else:
-        #            #10000001 for help reset, so output reset cmd help information
-        #            if resultMask == 0x81:
-        #                resp = 'Reset the target\n'
-        #                resp = hexEncode(resp)
-        #            #10000010 for help halt, so output halt cmd help information
-        #            elif resultMask == 0x82:
-        #                resp = 'Halt the target\n'
-        #                resp = hexEncode(resp)
-        #            #10000100 for help resume, so output resume cmd help information
-        #            elif resultMask == 0x84:
-        #                resp = 'Resume the target\n'
-        #                resp = hexEncode(resp)
-        #            #11 for reset halt cmd, so launch self.target.resetStopOnReset()
-        #            elif resultMask == 0x3:
-        #                resp = "OK"
-        #                self.target.resetStopOnReset()
-        #            #111 for reset halt resume cmd, so launch self.target.resetStopOnReset() and self.target.resume()
-        #            elif resultMask == 0x7:
-        #                resp = "OK"
-        #                self.target.resetStopOnReset()
-        #                self.target.resume()
-        #            else:
-        #                logging.warning("Invalid mon command '%s'", cmd)
-        #                resp = 'Invalid Command: "%s"\n' % cmd
-        #                resp = hexEncode(resp)
+            safecmd = {
+                'reset' : ['Reset target', 0x1],
+                'halt'  : ['Halt target', 0x2],
+                'resume': ['Resume target', 0x4],
+                'help'  : ['Display this help', 0x80],
+            }
+            resultMask = 0x00
+            if cmd == 'help':
+                resp = ''
+                for k,v in safecmd.items():
+                    resp += '%s\t%s\n' % (k,v[0])
+                resp = hexEncode(resp)
+            else:
+                cmdList = cmd.split(' ')
+                #check whether all the cmds is valid cmd for monitor
+                for cmd_sub in cmdList:
+                    if not cmd_sub in safecmd:
+                        #error cmd for monitor
+                        logging.warning("Invalid mon command '%s'", cmd)
+                        resp = 'Invalid Command: "%s"\n' % cmd
+                        resp = hexEncode(resp)
+                        return self.createRSPPacket(resp)
+                    else:
+                        resultMask = resultMask | safecmd[cmd_sub][1]
+                #if it's a single cmd, just launch it!
+                if len(cmdList) == 1:
+                    tmp = eval ('self.target.%s()' % cmd_sub)
+                    logging.debug(tmp)
+                    resp = "OK"
+                else:
+                    #10000001 for help reset, so output reset cmd help information
+                    if resultMask == 0x81:
+                        resp = 'Reset the target\n'
+                        resp = hexEncode(resp)
+                    #10000010 for help halt, so output halt cmd help information
+                    elif resultMask == 0x82:
+                        resp = 'Halt the target\n'
+                        resp = hexEncode(resp)
+                    #10000100 for help resume, so output resume cmd help information
+                    elif resultMask == 0x84:
+                        resp = 'Resume the target\n'
+                        resp = hexEncode(resp)
+                    #11 for reset halt cmd, so launch self.target.resetStopOnReset()
+                    elif resultMask == 0x3:
+                        resp = "OK"
+                        self.target.resetStopOnReset()
+                    #111 for reset halt resume cmd, so launch self.target.resetStopOnReset() and self.target.resume()
+                    elif resultMask == 0x7:
+                        resp = "OK"
+                        self.target.resetStopOnReset()
+                        self.target.resume()
+                    else:
+                        logging.warning("Invalid mon command '%s'", cmd)
+                        resp = 'Invalid Command: "%s"\n' % cmd
+                        resp = hexEncode(resp)
 
-        #        if self.target.getState() != TARGET_HALTED:
-        #            logging.error("Remote command left target running!")
-        #            logging.error("Forcing target to halt")
-        #            self.target.halt()
+                if self.target.getState() != TARGET_HALTED:
+                    logging.error("Remote command left target running!")
+                    logging.error("Forcing target to halt")
+                    self.target.halt()
 
-        #    return self.createRSPPacket(resp)
+            return self.createRSPPacket(resp)
 
-        #else:
-        #    return self.createRSPPacket("")
+        else:
+            pass
+
         return self.createRSPPacket("")
 
     #def handleGeneralSet(self, msg):
