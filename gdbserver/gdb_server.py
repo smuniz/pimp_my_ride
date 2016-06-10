@@ -118,17 +118,17 @@ class GDBServer(threading.Thread):
             while self.isAlive():
                 pass
             self.logger.info("GDB server thread killed")
-        self.board.uninit()
+        #self.board.uninit()
 
-    #def setBoard(self, board, stop = True):
-    #    self.lock.acquire()
-    #    if stop:
-    #        self.restart()
-    #    self.board = board
-    #    self.target = board.target
-    #    self.flash = board.flash
-    #    self.lock.release()
-    #    return
+    def setBoard(self, board, stop = True):
+        self.lock.acquire()
+        if stop:
+            self.restart()
+        self.board = board
+        self.target = board.target
+        self.flash = board.flash
+        self.lock.release()
+        return
 
     def run(self):
         self.timeOfLastPacket = time()
@@ -242,7 +242,7 @@ class GDBServer(threading.Thread):
             self.logger.debug('msg ignored: first char != $')
             return None, 0, 0
 
-        self.logger.debug('-->>>>>>>>>>>> GDB rsp packet: %s', msg)
+        #self.logger.debug('-->>>>>>>>>>>> GDB rsp packet: %s', msg)
 
         # query command
         if msg[1] == '?':
@@ -324,7 +324,7 @@ class GDBServer(threading.Thread):
         if not self.persist:
             #self.board.target.setVectorCatchFault(False) # TODO check this
             #self.board.target.setVectorCatchReset(False) # TODO 
-            self.board.target.resume()
+            self.target.resume()
         return self.createRSPPacket("")
 
     def breakpoint(self, data):

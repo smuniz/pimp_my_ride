@@ -36,10 +36,10 @@ FAULT = [
          ]
 
 
-class PimpedOutTarget(Target):
+class EmulatedTarget(Target):
 
     def __init__(self, emu):
-        super(PimpedOutTarget, self).__init__(None)
+        super(EmulatedTarget, self).__init__(None)
         self.emu = emu
 
     #def setFlash(self, flash):

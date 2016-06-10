@@ -18,8 +18,8 @@ import logging
 try:
     from pimp_my_ride import *
 
-    from target.emulated_target import PimpedOutTarget
-    #from board import Board
+    from target.board import Board
+    from target.emulated_target import EmulatedTarget
     from gdbserver.gdb_server import GDBServer
 
 except ImportError, err:
@@ -29,27 +29,6 @@ except ImportError, err:
 
 __all__ = ["Pimped"]
 
-
-class PimpedOutBoard(object):
-
-    def __init__(self, emu):
-        super(PimpedOutBoard, self).__init__()
-        self.target = PimpedOutTarget(emu)
-        self.emu = emu
-
-    def init(self):
-        """Initialize the board: interface, transport and target."""
-        print "[+] Initiating emulation..."
-        self.emu.start()
-
-    def uninit(self, resume = True ):
-        """Uninitialize the board: interface, transport and target.
-
-        This function resumes the target
-        """
-        print "[+] Emulation finished."
-        #self.emu.result()
-        self.emu.stop()
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -177,7 +156,7 @@ def main():
         # Set tracing all instructions with internal callback.
         emu.trace_instructions()
 
-        board = PimpedOutBoard(emu)
+        board = Board(EmulatedTarget(emu))
 
         print "[+] Initializing GDB server..."
         gdb = GDBServer(board, gdb_server_settings)
