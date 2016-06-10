@@ -338,7 +338,7 @@ class PimpMyRide(object):
         stack_size = (self.ssize+1) * PAGE_SIZE
 
         self._memory_map(self.stack, stack_size)
-        self._memory_write(self.stack, "\x00" * stack_size)
+        self.write_memory(self.stack, "\x00" * stack_size)
 
         sp = self.stack + self.ssize * PAGE_SIZE
         self.__uc.reg_write(self.REG_SP, sp)
@@ -355,14 +355,39 @@ class PimpMyRide(object):
         # Iterate through all the memory areas specified to map them all and
         # write content to them if necessary.
         for address, content in self.__memory_contents:
-            self._memory_write(address, content)
+            self.write_memory(address, content)
 
-    def _memory_write(self, address, content):
+    def __is_valid_memory_range(self, start_address, end_address):
+        """..."""
+        # Iterate through all the memory areas to validate the range.
+        for address, size in self.__memory_areas:
+            if start_address >= address and end_address <= address + size:
+                return True
+
+        return False
+
+    def read_memory(self, address, size):
+        """Read the content of a memory area.."""
+        # Check memory range to read is valid.
+        if not self.__is_valid_memory_range(address, address + size):
+            return None
+
+        self.logger.debug("Reading %d(0x%X) bytes at 0x%08X" % (
+            size, size, address))
+
+        # This will fail if the memory area was not yet defined in Unicorn.
+        return str(self.__uc.mem_read(address, size))
+
+    def write_memory(self, address, content):
         """Set the content of a memory area with user-defined content."""
+        # check memory range to write is valid.
+        if not self.__is_valid_memory_range(address, address + size):
+            return None
+
         self.logger.debug("Writting %d(0x%X) bytes at 0x%08X" % (
             len(content), len(content), address))
 
-        # This will fail is the memory area was not yet defined in Unicorn.
+        # This will fail if the memory area was not yet defined in Unicorn.
         self.__uc.mem_write(address, content)
 
     def _memory_map(self, address, size, perm=None):

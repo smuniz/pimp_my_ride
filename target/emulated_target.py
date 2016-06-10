@@ -46,13 +46,15 @@ class EmulatedTarget(Target):
     #    pass
 
     def init(self):
-        return
+        self.emu.start()
 
     def info(self, request):
         return
 
     def flush(self):
-        self.transport.flush()
+        # XXX Is there something else to do here?
+        ##self.transport.flush()
+        pass
 
     def readIDCode(self):
         return
@@ -69,20 +71,24 @@ class EmulatedTarget(Target):
     def writeMemory(self, addr, value, transfer_size = 32):
         return
 
-    def readMemory(self, addr, transfer_size = 32):
-        return
+    def readMemory(self, addr, transfer_size = 32):#, mode = READ_NOW):
+        """
+        read a memory location. By default, a word will
+        be read
+        """
+        return self.emu.read_memory(addr, transfer_size)
 
-    def writeBlockMemoryUnaligned8(self, addr, value):
-        return
+    #def writeBlockMemoryUnaligned8(self, addr, value):
+    #    return
 
-    def writeBlockMemoryAligned32(self, addr, data):
-        return
+    #def writeBlockMemoryAligned32(self, addr, data):
+    #    return
 
-    def readBlockMemoryUnaligned8(self, addr, size):
-        return
+    #def readBlockMemoryUnaligned8(self, addr, size):
+    #    return
 
-    def readBlockMemoryAligned32(self, addr, size):
-        return
+    #def readBlockMemoryAligned32(self, addr, size):
+    #    return
 
     def readCoreRegister(self, id):
         return

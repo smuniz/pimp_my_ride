@@ -30,7 +30,7 @@ from utility import hexStringToIntList, hexEncode, hexDecode
 
 
 # Logging options. Set to True to enable.
-LOG_MEM = False # Log memory accesses.
+LOG_MEM = True # Log memory accesses.
 LOG_ACK = False # Log ack or nak.
 
 
@@ -152,6 +152,9 @@ class GDBServer(threading.Thread):
                 continue
 
             self.logger.info("One client connected!")
+
+            self.logger.info("Starting emulator...")
+            self.target.init()
 
             while True:
 
@@ -514,14 +517,16 @@ class GDBServer(threading.Thread):
 
         try:
             val = ''
-            mem = self.target.readBlockMemoryUnaligned8(addr, length)
+            mem = self.target.readMemory(addr, length)
             # Flush so an exception is thrown now if invalid memory was accesses
             self.target.flush()
             for x in mem:
-                if x >= 0x10:
-                    val += hex(x)[2:4]
-                else:
-                    val += '0' + hex(x)[2:3]
+                #print "-> x = '%r'" % x
+                #if x >= 0x10:
+                #    val += hex(x)[2:4]
+                #else:
+                #    val += '0' + hex(x)[2:3]
+                val += x.encode("hex")
         except TransferError:
             self.logger.debug("getMemory failed at 0x%x" % addr)
             val = 'E01' #EPERM
