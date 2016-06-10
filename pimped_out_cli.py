@@ -11,6 +11,8 @@ __status__      = "Development"
 __description__ = "Pimped out multi-architecture CPU emulator"
 
 from sys import argv, exit
+import logging
+from argparse import ArgumentParser
 
 try:
     from pimp_my_ride import *
@@ -80,24 +82,74 @@ def autodetect_architecture(image):
 
     return (architecture, bits, little_endian)
 
+LEVELS = {
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARNING,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL
+}
+
+def get_gdb_server_settings(args):
+    """Set GDB server settings."""
+    return {
+        #'break_at_hardfault' : args.break_at_hardfault,
+        #'step_into_interrupt' : args.step_into_interrupt,
+        #'break_on_reset' : args.break_on_reset,
+        'persist' : args.persist,
+        #'soft_bkpt_as_hard' : args.soft_bkpt_as_hard,
+        #'chip_erase': get_chip_erase(args),
+        #'hide_programming_progress' : args.hide_progress,
+        #'fast_program' : args.fast_program,
+        'port_number' : args.port_number,
+    }
+
 def setup_logging(args):
     level = LEVELS.get(args.debug_level, logging.NOTSET)
     logging.basicConfig(level=level)
 
-def usage():
-    """Print usage information."""
-    print "Usage: %s [FILE]" % argv[0]
-    
 def main():
 
-    if len(argv) == 1:
-        usage()
-        return
+    #supported_targets = pyOCD.target.TARGET.keys()
+    debug_levels = LEVELS.keys()
+
+    # Keep args in snyc with flash_tool.py when possible
+    parser = ArgumentParser(description=__description__)
+    parser.add_argument('--version', action='version', version=__version__)
+    parser.add_argument("-p", "--port", dest = "port_number", type=int, default = 3333, help = "Port number that GDB server will listen.")
+    #parser.add_argument("-c", "--cmd-port", dest = "cmd_port", default = 4444, help = "Command port number. pyOCD doesn't open command port, but it's required to be compatible with OpenOCD and Eclipse.")
+    #parser.add_argument("-b", "--board", dest = "board_id", default = None, help="Connect to board by board id.  Use -l to list all connected boards.")
+    #parser.add_argument("-l", "--list", action = "store_true", dest = "list_all", default = False, help = "List all connected boards.")
+    parser.add_argument("-d", "--debug", dest = "debug_level", choices = debug_levels, default = 'info', help = "Set the level of system logging output. Supported choices are: "+", ".join(debug_levels), metavar="LEVEL")
+    #parser.add_argument("-n", "--nobreak", dest = "break_at_hardfault", default = True, action="store_false", help = "Disable halt at hardfault handler." )
+    #parser.add_argument("-r", "--reset-break", dest = "break_on_reset", default = False, action="store_true", help = "Halt the target when reset." )
+    #parser.add_argument("-s", "--step-int", dest = "step_into_interrupt", default = False, action="store_true", help = "Allow single stepping to step into interrupts." )
+    #parser.add_argument("-f", "--frequency", dest = "frequency", default = 1000000, type=int, help = "Set the SWD clock frequency in Hz." )
+    parser.add_argument("-o", "--persist", dest = "persist", default = False, action="store_true", help = "Keep GDB server running even after remote has detached.")
+    parser.add_argument("-t", "--target", dest = "target", default = None, help = "target to debug.", metavar="TARGET", required=True)
+    #parser.add_argument("-bh", "--soft-bkpt-as-hard", dest = "soft_bkpt_as_hard", default = False, action = "store_true", help = "Replace software breakpoints with hardware breakpoints.")
+    #group = parser.add_mutually_exclusive_group()
+    #group.add_argument("-ce", "--chip_erase", action="store_true",help="Use chip erase when programming.")
+    #group.add_argument("-se", "--sector_erase", action="store_true",help="Use sector erase when programming.")
+    ## -Currently "--unlock" does nothing since kinetis parts will automatically get unlocked
+    #parser.add_argument("-u", "--unlock", action="store_true", default=False, help="Unlock the device.")
+    ## reserved: "-a", "--address"
+    ## reserved: "-s", "--skip"
+    #parser.add_argument("-hp", "--hide_progress", action="store_true", help = "Don't display programming progress." )
+    #parser.add_argument("-fp", "--fast_program", action="store_true", help = "Use only the CRC of each page to determine if it already has the same data.")
+
+    args = parser.parse_args()
+
+    # Setup logging facility.
+    setup_logging(args)
+
+    # Setup GDB with user-specified settings.
+    gdb_server_settings = get_gdb_server_settings(args)
 
     #
     # Obtain the memory ranges where we're going to operate.
     #
-    image_filename = argv[1]
+    image_filename = args.target
 
     try:
         fd = open(image_filename, 'rb')
@@ -164,14 +216,10 @@ def main():
         print "[+] Emulation finished."
         emu.result()
 
-        #args = parser.parse_args()
-        #gdb_server_settings = get_gdb_server_settings(args)
-        #setup_logging(args)
-
         board = PimpedOutBoard()
 
         print "[+] Initializing GDB server..."
-        #gdb = GDBServer(board, 3333)
+        #gdb = GDBServer(board, gdb_server_settings)
 
         #while gdb.isAlive():
         #    gdb.join(timeout=0.5)
