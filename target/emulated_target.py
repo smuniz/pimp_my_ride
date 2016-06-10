@@ -69,7 +69,11 @@ class EmulatedTarget(Target):
         return
 
     def writeMemory(self, addr, value, transfer_size = 32):
-        return
+        """
+        write a memory location.
+        By default the transfer size is a word
+        """
+        self.emu.write_memory(addr, value)
 
     def readMemory(self, addr, transfer_size = 32):#, mode = READ_NOW):
         """
@@ -77,18 +81,6 @@ class EmulatedTarget(Target):
         be read
         """
         return self.emu.read_memory(addr, transfer_size)
-
-    #def writeBlockMemoryUnaligned8(self, addr, value):
-    #    return
-
-    #def writeBlockMemoryAligned32(self, addr, data):
-    #    return
-
-    #def readBlockMemoryUnaligned8(self, addr, size):
-    #    return
-
-    #def readBlockMemoryAligned32(self, addr, size):
-    #    return
 
     def readCoreRegister(self, id):
         return

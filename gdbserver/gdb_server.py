@@ -541,7 +541,7 @@ class GDBServer(threading.Thread):
 
         try:
             if length > 0:
-                self.target.writeBlockMemoryUnaligned8(addr, data)
+                self.target.writeMemory(addr, data)
                 # Flush so an exception is thrown now if invalid memory was accessed
                 self.target.flush()
             resp = "OK"
@@ -571,7 +571,7 @@ class GDBServer(threading.Thread):
 
         try:
             if length > 0:
-                self.target.writeBlockMemoryUnaligned8(addr, data)
+                self.target.writeMemory(addr, data)
                 # Flush so an exception is thrown now if invalid memory was accessed
                 self.target.flush()
             resp = "OK"
