@@ -35,7 +35,7 @@ class GDBServer(threading.Thread):
     It implements the RSP (Remote Serial Protocol).
     """
 
-    def __init__(self, board, port_urlWSS, options = {}):
+    def __init__(self, board, options = {}):
 
         threading.Thread.__init__(self)
 
@@ -47,6 +47,8 @@ class GDBServer(threading.Thread):
         self.abstract_socket = None
         self.wss_server = None
         self.port = 0
+
+        port_urlWSS = options.get('port_urlWSS')
 
         if isinstance(port_urlWSS, str) == True:
             self.wss_server = port_urlWSS
