@@ -18,9 +18,9 @@ import logging
 try:
     from pimp_my_ride import *
 
-    from emulated_target import PimpedOutTarget
+    from target.emulated_target import PimpedOutTarget
     #from board import Board
-    from gdb_server import GDBServer
+    from gdbserver.gdb_server import GDBServer
 
 except ImportError, err:
     print "Import Error : %s" % err

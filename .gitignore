@@ -68,7 +68,7 @@ coverage.xml
 docs/_build/
 
 # PyBuilder
-target/
+#target/
 
 #Ipython Notebook
 .ipynb_checkpoints
