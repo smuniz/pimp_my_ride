@@ -554,9 +554,7 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket("OK")
 
     def getRegisters(self):
-        # XXX DELME
-        #return self.createRSPPacket(self.target.getRegisterContext())
-        return self.createRSPPacket("11223344")
+        return self.createRSPPacket(self.target.getRegisterContext())
 
     def setRegisters(self, data):
         #self.target.setRegisterContext(data)

@@ -52,42 +52,37 @@ class PimpedOutBoard(object):
         """
         pass
 
-
-board = PimpedOutBoard()
-
-# Start a GDB server
-gdb = GDBServer(board, 3333)
-
-while gdb.isAlive():
-    gdb.join(timeout=0.5)
-
-
 try:
     from elftools.elf.elffile import ELFFile
+
+    from elftools.elf.descriptions import (
+        describe_ei_class, describe_ei_data, describe_ei_version,
+        describe_ei_osabi, describe_e_type, describe_e_machine,
+        describe_e_version_numeric, describe_p_type, describe_p_flags,
+        describe_sh_type, describe_sh_flags,
+        describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
+        describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
+        describe_ver_flags, describe_note
+        )
+
 except ImportError, err:
     print "Missing 'pyelftools' module."
     exit(1)
 
-def _autodetect_architecture():
+def autodetect_architecture(image):
     """Detect the current architecture in use by the disassembler being
     used.
     
     """
-    #architecture = get_idp_name()
-    architecture = "x86"
-    bits = 64 # FIXME : detect this automatically
+    architecture = image.get_machine_arch()
+    bits = image.elfclass
+    little_endian = image.little_endian
 
-    #info = get_inf_structure()
+    return (architecture, bits, little_endian)
 
-    #if info.is_64bit():
-    #    bits = 64
-    #elif info.is_32bit():
-    #    bits = 32
-    #else:
-    #    bits = 16
-
-    endian = None # TODO : implement with last letter of info.procName
-    return (architecture, bits, endian)
+def setup_logging(args):
+    level = LEVELS.get(args.debug_level, logging.NOTSET)
+    logging.basicConfig(level=level)
 
 def usage():
     """Print usage information."""
@@ -143,13 +138,13 @@ def main():
     # Set architecture specific types for the current binary being
     # analyzed.
     #
-    architecture, bits, endian = _autodetect_architecture()
+    architecture, bits, little_endian = autodetect_architecture(image)
 
     #
     # Initialize the emulator and set the operational parameters.
     #
     print "[+] Configuring emulator..."
-    emu = PimpMyRide(architecture, bits, endian)
+    emu = PimpMyRide(architecture, bits, little_endian)
 
     emu.add_memory_area(addr, len(code))
     emu.add_memory_content(addr, code)
@@ -160,6 +155,8 @@ def main():
     # Tracing all instructions with internal callback.
     emu.trace_instructions()
 
+    gdb = None
+
     try:
         print "[+] Initiating emulation..."
         emu.start()
@@ -167,9 +164,32 @@ def main():
         print "[+] Emulation finished."
         emu.result()
 
+        #args = parser.parse_args()
+        #gdb_server_settings = get_gdb_server_settings(args)
+        #setup_logging(args)
+
+        board = PimpedOutBoard()
+
+        print "[+] Initializing GDB server..."
+        #gdb = GDBServer(board, 3333)
+
+        #while gdb.isAlive():
+        #    gdb.join(timeout=0.5)
+
     except PimpMyRideException, err:
         print "[-] Error : %s" % err
         return
+
+    except KeyboardInterrupt:
+        pass
+
+    except Exception as e:
+        print "[-] Uncaught exception : %s" % e
+        traceback.print_exc()
+
+    finally:
+        if gdb is not None:
+            gdb.stop()
 
 if __name__ == "__main__":
     print "%s v%s\n" % (__description__, __version__)

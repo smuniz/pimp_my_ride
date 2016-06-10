@@ -59,7 +59,7 @@ class PimpMyRide(object):
     
     """
 
-    def __init__(self, architecture, bits, endian, compiler=COMPILE_GCC, \
+    def __init__(self, architecture, bits, little_endian, compiler=COMPILE_GCC, \
         stack=0xf000000, ssize=3, debug=True):
 
         logging.basicConfig(level=logging.DEBUG)
@@ -81,12 +81,13 @@ class PimpMyRide(object):
 
         self.compiler = compiler
 
-
         # Convert IDA architectures IDs to our own.
-        if architecture == "ppc":
+        if architecture == "ppc": # FIXME : pyelftools does not recognize
+                                    # PowerPC architecture, hence does not
+                                    # return its type.
             raise PimpMyRideException("PowerPC is unsupported.")
 
-        elif architecture == "mips":
+        elif architecture == "MIPS":
             #import unicorn.mips_const import *
 
             #cur_arch = uc.UC_ARCH_MIPS
@@ -94,35 +95,33 @@ class PimpMyRide(object):
 
             raise PimpMyRideException("MIPS is not yet implemented.")
 
-        elif architecture == "arm":
-            if bits == 64:
-                cur_arch = uc.UC_ARCH_ARM64
-                cur_mode = uc.UC_MODE_ARM
+        elif architecture == "ARM":
+            cur_arch = uc.UC_ARCH_ARM
+            cur_mode = uc.UC_MODE_ARM
 
-            elif bits == 32:
-                cur_arch = uc.UC_ARCH_ARM
-                cur_mode = uc.UC_MODE_ARM
-
-            else:
-                raise PimpMyRideException(
-                        "Unknown %dbit for ARM architecture" % bits)
+        elif architecture == "AArch64":
+            cur_arch = uc.UC_ARCH_ARM64
+            cur_mode = uc.UC_MODE_ARM
 
         elif architecture == "x86":
-
             cur_arch = uc.UC_ARCH_X86
             cs_arch = cs.CS_ARCH_X86
 
-            if bits == 64:
-                cur_mode = uc.UC_MODE_64
-                cs_mode = cs.CS_MODE_64
-            elif bits == 32:
+            if bits == 32:
                 cur_mode = uc.UC_MODE_32
                 cs_mode = cs.CS_MODE_32
             elif bits == 16:
                 cur_mode = uc.UC_MODE_16
                 cs_mode = cs.CS_MODE_16
             else:
-                raise PimpMyRideException("Unknown %dbit for X86 architecture" % bits)
+                raise PimpMyRideException("Unknown %dbit for x86 architecture" % bits)
+
+        elif architecture == "x64":
+            cur_arch = uc.UC_ARCH_X86
+            cur_mode = uc.UC_MODE_64
+
+            cs_arch = cs.CS_ARCH_X86
+            cs_mode = cs.CS_MODE_64
 
         else:
             raise PimpMyRideException(
