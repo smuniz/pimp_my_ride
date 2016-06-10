@@ -52,7 +52,7 @@ class PimpMyRide(object):
     """
 
     def __init__(self, architecture, bits, little_endian, compiler=COMPILE_GCC, \
-        stack=0xf000000, ssize=3, log_level=LOG_LEVELS['info']):
+        stack=0xf000000, stack_size=3, log_level=LOG_LEVELS['info']):
 
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 
@@ -79,7 +79,7 @@ class PimpMyRide(object):
         self.__memory_contents = []
 
         self.stack = self._align_address(stack)
-        self.ssize = ssize
+        self.stack_size = stack_size
 
         self.compiler = compiler
 
@@ -335,12 +335,12 @@ class PimpMyRide(object):
         contents.
         """
         # Initialize the stack memory.
-        stack_size = (self.ssize+1) * PAGE_SIZE
+        stack_size = (self.stack_size+1) * PAGE_SIZE
 
         self._memory_map(self.stack, stack_size)
         self.write_memory(self.stack, "\x00" * stack_size)
 
-        sp = self.stack + self.ssize * PAGE_SIZE
+        sp = self.stack + self.stack_size * PAGE_SIZE
         self.__uc.reg_write(self.REG_SP, sp)
 
         # Iterate through all the memory areas specified to map them all and
@@ -362,15 +362,30 @@ class PimpMyRide(object):
         # Iterate through all the memory areas to validate the range.
         for address, size in self.__memory_areas:
             if start_address >= address and end_address <= address + size:
+                self.logger.debug(
+                    "Successfully validating memory range 0x%08X - 0x%08X" % (
+                    start_address, end_address))
                 return True
 
+        
+        # TODO Make this better by adding this area to the other memory areas
+        # (probably with different settings & permissions).
+        if start_address >= self.stack and end_address <= (self.stack_size * PAGE_SIZE) + self.stack:
+            self.logger.debug(
+                "Successfully validating memory range 0x%08X - 0x%08X" % (
+                start_address, end_address))
+            return True
+
+        self.logger.debug(
+            "Unable to validate memory range 0x%08X - 0x%08X" % (
+            start_address, end_address))
         return False
 
     def read_memory(self, address, size):
         """Read the content of a memory area.."""
         # Check memory range to read is valid.
         if not self.__is_valid_memory_range(address, address + size):
-            return None
+            return ""
 
         self.logger.debug("Reading %d(0x%X) bytes at 0x%08X" % (
             size, size, address))
@@ -381,8 +396,8 @@ class PimpMyRide(object):
     def write_memory(self, address, content):
         """Set the content of a memory area with user-defined content."""
         # check memory range to write is valid.
-        if not self.__is_valid_memory_range(address, address + size):
-            return None
+        if not self.__is_valid_memory_range(address, address + len(content)):
+            return ""
 
         self.logger.debug("Writting %d(0x%X) bytes at 0x%08X" % (
             len(content), len(content), address))

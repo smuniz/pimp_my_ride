@@ -520,13 +520,7 @@ class GDBServer(threading.Thread):
             mem = self.target.readMemory(addr, length)
             # Flush so an exception is thrown now if invalid memory was accesses
             self.target.flush()
-            for x in mem:
-                #print "-> x = '%r'" % x
-                #if x >= 0x10:
-                #    val += hex(x)[2:4]
-                #else:
-                #    val += '0' + hex(x)[2:3]
-                val += x.encode("hex")
+            val = "".join([x.encode("hex") for x in mem])
         except TransferError:
             self.logger.debug("getMemory failed at 0x%x" % addr)
             val = 'E01' #EPERM
