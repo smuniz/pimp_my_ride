@@ -245,7 +245,7 @@ class GDBServer(threading.Thread):
             self.logger.debug('msg ignored: first char != $')
             return None, 0, 0
 
-        #self.logger.debug('-->>>>>>>>>>>> GDB rsp packet: %s', msg)
+        self.logger.debug('-->>>>>>>>>>>> GDB rsp packet: %s', msg)
 
         # query command
         if msg[1] == '?':
@@ -294,8 +294,8 @@ class GDBServer(threading.Thread):
         elif msg[1] == 'P':
             return self.writeRegister(msg[2:]), 1, 0
 
-        elif msg[1] == 'q':
-            return self.handleQuery(msg[2:]), 1, 0
+        #elif msg[1] == 'q':
+        #    return self.handleQuery(msg[2:]), 1, 0
 
         elif msg[1] == 'Q':
             return self.handleGeneralSet(msg[2:]), 1, 0
@@ -613,11 +613,11 @@ class GDBServer(threading.Thread):
 
             # Build our list of features.
             features = []
-            features.append('qXfer:features:read+')
+            #features.append('qXfer:features:read+')
             #features.append('QStartNoAckMode+') # TODO check this
             features.append('PacketSize=' + hex(self.packet_size)[2:])
-            if hasattr(self.target, 'memoryMapXML'):
-                features.append('qXfer:memory-map:read+')
+            #if hasattr(self.target, 'memoryMapXML'):
+            #    features.append('qXfer:memory-map:read+')
             resp = ';'.join(features)
             return self.createRSPPacket(resp)
 

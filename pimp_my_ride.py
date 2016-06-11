@@ -529,7 +529,7 @@ class PimpMyRide(object):
         """Start the emulation and process results."""
         try:
             timeout = 0
-            count = 0
+            count = 1
 
             self.__uc.emu_start(self.start_address,
                                 self.return_address,
