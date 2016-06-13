@@ -47,6 +47,21 @@ def float2int(data):
     d = struct.pack("@f", data)
     return struct.unpack("@I", d)[0]
 
+## @brief create 16-digit hexadecimal string from 64-bit register value.
+def intToHex16(val):
+    val = hex(int(val))[2:]
+    size = len(val)
+    r = ''
+    for i in range(8-size):
+        r += '0'
+    r += str(val)
+
+    resp = ''
+    for i in range(4):
+        resp += r[8 - 2*i - 2: 8 - 2*i]
+
+    return resp
+
 ## @brief create 8-digit hexadecimal string from 32-bit register value.
 def intToHex8(val):
     val = hex(int(val))[2:]

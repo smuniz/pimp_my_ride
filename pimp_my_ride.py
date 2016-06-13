@@ -422,6 +422,31 @@ class PimpMyRide(object):
         mask = 1 << offset
         return 1 if (value & mask) > 0 else 0
 
+    def read_register(self, reg_name):
+        """..."""
+        # XXX
+        reg_map = {
+            "rax" : UC_X86_REG_RAX,
+            "rbx" : UC_X86_REG_RBX,
+            "rcx" : UC_X86_REG_RCX,
+            "rdx" : UC_X86_REG_RDX,
+            "rdi" : UC_X86_REG_RSI,
+            "rsi" : UC_X86_REG_RDI,
+            "rbp" : UC_X86_REG_RBP,
+            "rsp" : UC_X86_REG_RSP,
+            "rip" : UC_X86_REG_RIP,
+            "r8"  : UC_X86_REG_R8,
+            "r9"  : UC_X86_REG_R9,
+            "r10" : UC_X86_REG_R10,
+            "r11" : UC_X86_REG_R11,
+            "r12" : UC_X86_REG_R12,
+            "r13" : UC_X86_REG_R13,
+            "r14" : UC_X86_REG_R14,
+            "r15" : UC_X86_REG_R15,
+        }
+
+        return self.__uc.reg_read(reg_map[reg_name])
+
     def __show_regs(self):
         """..."""
         self.logger.debug("Registers:")

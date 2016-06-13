@@ -15,8 +15,10 @@
  limitations under the License.
 """
 from xml.etree.ElementTree import Element, SubElement, tostring
-import logging
 import struct
+import logging
+
+import colorlog
 
 from .target import Target
 from .target import TARGET_RUNNING, TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
@@ -45,63 +47,80 @@ FAULT = [
 # negated. So -1 means a mask of 0xff, -2 is 0xff00, and so on. The actual DCRSR register index
 # for these combined registers has the key of 'cfbp'.
 CORE_REGISTER = {
-                 'r0': 0,
-                 'r1': 1,
-                 'r2': 2,
-                 'r3': 3,
-                 'r4': 4,
-                 'r5': 5,
-                 'r6': 6,
-                 'r7': 7,
-                 'r8': 8,
-                 'r9': 9,
-                 'r10': 10,
-                 'r11': 11,
-                 'r12': 12,
-                 'sp': 13,
-                 'lr': 14,
-                 'pc': 15,
-                 'xpsr': 16,
-                 'msp': 17,
-                 'psp': 18,
-                 'cfbp': 20,
-                 'control': -4,
-                 'faultmask': -3,
-                 'basepri': -2,
-                 'primask': -1,
-                 'fpscr': 33,
-                 's0': 0x40,
-                 's1': 0x41,
-                 's2': 0x42,
-                 's3': 0x43,
-                 's4': 0x44,
-                 's5': 0x45,
-                 's6': 0x46,
-                 's7': 0x47,
-                 's8': 0x48,
-                 's9': 0x49,
-                 's10': 0x4a,
-                 's11': 0x4b,
-                 's12': 0x4c,
-                 's13': 0x4d,
-                 's14': 0x4e,
-                 's15': 0x4f,
-                 's16': 0x50,
-                 's17': 0x51,
-                 's18': 0x52,
-                 's19': 0x53,
-                 's20': 0x54,
-                 's21': 0x55,
-                 's22': 0x56,
-                 's23': 0x57,
-                 's24': 0x58,
-                 's25': 0x59,
-                 's26': 0x5a,
-                 's27': 0x5b,
-                 's28': 0x5c,
-                 's29': 0x5d,
-                 's30': 0x5e,
-                 's31': 0x5f,
+                'rax' : 0,
+                'rbx' : 1,
+                'rcx' : 2,
+                'rdx' : 3,
+                'rsi' : 4,
+                'rdi' : 5,
+                'rbp' : 6,
+                'rsp' : 7,
+                'r8'  : 8,
+                'r9'  : 9,
+                'r10' : 10,
+                'r11' : 11,
+                'r12' : 12,
+                'r13' : 13,
+                'r14' : 14,
+                'r15' : 15,
+                'rip' : 16,
+                 #'r0': 0,
+                 #'r1': 1,
+                 #'r2': 2,
+                 #'r3': 3,
+                 #'r4': 4,
+                 #'r5': 5,
+                 #'r6': 6,
+                 #'r7': 7,
+                 #'r8': 8,
+                 #'r9': 9,
+                 #'r10': 10,
+                 #'r11': 11,
+                 #'r12': 12,
+                 #'sp': 13,
+                 #'lr': 14,
+                 #'pc': 15,
+                 #'xpsr': 16,
+                 #'msp': 17,
+                 #'psp': 18,
+                 #'cfbp': 20,
+                 #'control': -4,
+                 #'faultmask': -3,
+                 #'basepri': -2,
+                 #'primask': -1,
+                 #'fpscr': 33,
+                 #'s0': 0x40,
+                 #'s1': 0x41,
+                 #'s2': 0x42,
+                 #'s3': 0x43,
+                 #'s4': 0x44,
+                 #'s5': 0x45,
+                 #'s6': 0x46,
+                 #'s7': 0x47,
+                 #'s8': 0x48,
+                 #'s9': 0x49,
+                 #'s10': 0x4a,
+                 #'s11': 0x4b,
+                 #'s12': 0x4c,
+                 #'s13': 0x4d,
+                 #'s14': 0x4e,
+                 #'s15': 0x4f,
+                 #'s16': 0x50,
+                 #'s17': 0x51,
+                 #'s18': 0x52,
+                 #'s19': 0x53,
+                 #'s20': 0x54,
+                 #'s21': 0x55,
+                 #'s22': 0x56,
+                 #'s23': 0x57,
+                 #'s24': 0x58,
+                 #'s25': 0x59,
+                 #'s26': 0x5a,
+                 #'s27': 0x5b,
+                 #'s28': 0x5c,
+                 #'s29': 0x5d,
+                 #'s30': 0x5e,
+                 #'s31': 0x5f,
                  }
 
 
@@ -120,31 +139,43 @@ class EmulatedTarget(Target):
 
     regs_general = [
         #            Name       bitsize     type            group
-        RegisterInfo('r0',      32,         'int',          'general'),
-        RegisterInfo('r1',      32,         'int',          'general'),
-        RegisterInfo('r2',      32,         'int',          'general'),
-        RegisterInfo('r3',      32,         'int',          'general'),
-        RegisterInfo('r4',      32,         'int',          'general'),
-        RegisterInfo('r5',      32,         'int',          'general'),
-        RegisterInfo('r6',      32,         'int',          'general'),
-        RegisterInfo('r7',      32,         'int',          'general'),
-        RegisterInfo('r8',      32,         'int',          'general'),
-        RegisterInfo('r9',      32,         'int',          'general'),
-        RegisterInfo('r10',     32,         'int',          'general'),
-        RegisterInfo('r11',     32,         'int',          'general'),
-        RegisterInfo('r12',     32,         'int',          'general'),
-        RegisterInfo('sp',      32,         'data_ptr',     'general'),
-        RegisterInfo('lr',      32,         'int',          'general'),
-        RegisterInfo('pc',      32,         'code_ptr',     'general'),
-        RegisterInfo('xpsr',    32,         'int',          'general'),
-        RegisterInfo('msp',     32,         'int',          'general'),
-        RegisterInfo('psp',     32,         'int',          'general'),
-        RegisterInfo('primask', 32,         'int',          'general'),
-        RegisterInfo('control', 32,         'int',          'general'),
+        RegisterInfo('rax',  32,         'int',          'general'),
+        RegisterInfo('rbx',   32,         'int',          'general'),
+        RegisterInfo('rcx',   32,         'int',          'general'),
+        RegisterInfo('rdx',   32,         'int',          'general'),
+        RegisterInfo('rsi',   32,         'int',          'general'),
+        RegisterInfo('rdi',   32,         'int',          'general'),
+        RegisterInfo('rbp',   32,         'int',          'general'),
+        RegisterInfo('rsp',   32,         'int',          'general'),
+        RegisterInfo('r8' ,   32,         'int',          'general'),
+        RegisterInfo('r9' ,   32,         'int',          'general'),
+        RegisterInfo('r10',   32,         'int',          'general'),
+        RegisterInfo('r11',   32,         'int',          'general'),
+        RegisterInfo('r12',   32,         'int',          'general'),
+        RegisterInfo('r13',   32,         'data_ptr',     'general'),
+        RegisterInfo('r14',   32,         'int',          'general'),
+        RegisterInfo('r15',   32,         'code_ptr',     'general'),
+        RegisterInfo('rip',   32,         'int',          'general'),
+        #RegisterInfo('msp',     32,         'int',          'general'),
+        #RegisterInfo('psp',     32,         'int',          'general'),
+        #RegisterInfo('primask', 32,         'int',          'general'),
+        #RegisterInfo('control', 32,         'int',          'general'),
         ]
 
-    def __init__(self, emu):
+    def __init__(self, emu, log_level=logging.DEBUG):
         super(EmulatedTarget, self).__init__(None)
+
+        # setup logging
+        log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
+
+        handler = logging.StreamHandler()
+        handler.setLevel(log_level)
+        handler.setFormatter(colorlog.ColoredFormatter(log_format))
+
+        self.logger = colorlog.getLogger(type(self).__name__)
+        self.logger.setLevel(log_level)
+        self.logger.addHandler(handler)
+
         self.emu = emu
 
     #def setFlash(self, flash):
@@ -177,7 +208,7 @@ class EmulatedTarget(Target):
 #                # due to the extra address writes, but will not create any
 #                # read/write errors.
 #                auto_increment_page_size = 0x400
-#                logging.warning("Unknown AHB IDR: 0x%x" % ahb_idr)
+#                self.logger.warning("Unknown AHB IDR: 0x%x" % ahb_idr)
 
         if bus_accessible:
 #            self.halt()
@@ -275,15 +306,39 @@ class EmulatedTarget(Target):
     def getRegisterContext(self):
         """Return hexadecimal dump of registers as expected by GDB."""
 
-        logging.debug("GDB getting register context")
+        self.logger.debug("GDB getting register context")
         resp = ''
         reg_num_list = map(lambda reg:reg.reg_num, self.register_list)
+        #print "\n*************>>>", reg_num_list
 
         vals = self.readCoreRegistersRaw(reg_num_list)
         #print("Vals: %s" % vals)
-        for reg, regValue in zip(self.register_list, vals):
-            resp += conversion.intToHex8(regValue)
-            logging.debug("GDB reg: %s = 0x%X", reg.name, regValue)
+        #for reg, regValue in zip(self.register_list, vals): # XXX original
+        for reg in self.register_list:
+            #regName = self.register_list[reg].name
+            regValue = self.emu.read_register(reg.name)
+
+            resp += struct.pack("<Q", regValue).encode("hex") # conversion.intToHex8(regValue) # FIXME
+
+            #self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
+
+        return resp
+
+    def registerNameToIndex(self, reg):
+        """
+        return register index based on name.
+        If reg is a string, find the number associated to this register
+        in the lookup table CORE_REGISTER
+        """
+        if isinstance(reg, str):
+
+            reg = CORE_REGISTER.get(reg.lower(), None)
+
+            if not reg:
+                self.logger.error('cannot find %s core register', reg)
+                return None
+
+        return reg
 
     def readCoreRegistersRaw(self, reg_list):
         """
@@ -318,9 +373,10 @@ class EmulatedTarget(Target):
         #    self.readMemory(DHCSR, mode=READ_START)
         #    self.readMemory(DCRDR, mode=READ_START)
 
-        ## Read all results
-        #reg_vals = []
-        #for reg in reg_list:
+        # Read all results
+        reg_vals = []
+        for index,reg in enumerate(reg_list):
+            reg_vals.append(index)
         #    dhcsr_val = self.readMemory(DHCSR, mode=READ_END)
         #    assert dhcsr_val & S_REGRDY
         #    # read DCRDR
@@ -331,10 +387,9 @@ class EmulatedTarget(Target):
         #        val = (val >> ((-reg - 1) * 8)) & 0xff
 
         #    reg_vals.append(val)
+            pass
 
         return reg_vals
-
-
 
     def setRegisterContext(self, data):
         return
@@ -344,11 +399,11 @@ class EmulatedTarget(Target):
 
     def gdbGetRegister(self, reg):
         resp = ''
-        #if reg < len(self.register_list):
-        #    regName = self.register_list[reg].name
-        #    regValue = self.readCoreRegisterRaw(regName)
-        #    resp = conversion.intToHex8(regValue)
-        #    logging.debug("GDB reg: %s = 0x%X", regName, regValue)
+        if reg < len(self.register_list):
+            regName = self.register_list[reg].name
+            regValue = self.emu.read_register(regName)  #self.readCoreRegisterRaw(regName)
+            resp = conversion.intToHex8(regValue)
+            self.logger.debug("GDB reg: %s = 0x%X", regName, regValue)
         return resp
 
     def getTResponse(self, gdbInterrupt = False):
@@ -357,7 +412,23 @@ class EmulatedTarget(Target):
             The signal encountered.
             The current value of the important registers (sp, lr, pc).
         """
-        return "T05"
+        #return "T05"
+        resp = []
+        resp.append("T0506:0 *,")
+
+        regValue = self.emu.read_register("rsp")
+        enc_reg = struct.pack("<Q", regValue).encode("hex")
+        resp.append("07:" + enc_reg)
+
+        regValue = self.emu.read_register("rip")
+        enc_reg = struct.pack("<Q", regValue).encode("hex")
+        resp.append("10:" + enc_reg)
+
+        resp.append("thread:26a ")
+        resp.append("core:1")
+
+        self.logger.debug("T Response : %s" % resp)
+        return ";".join(resp)
         #if gdbInterrupt:
         #    response = 'T' + conversion.intToHex2(signals.SIGINT)
         #else:
@@ -378,5 +449,5 @@ class EmulatedTarget(Target):
     #    except:
     #        # If not a fault then default to SIGSTOP
     #        signal = signals.SIGSTOP
-    #    logging.debug("GDB lastSignal: %d", signal)
+    #    self.logger.debug("GDB lastSignal: %d", signal)
     #    return signal

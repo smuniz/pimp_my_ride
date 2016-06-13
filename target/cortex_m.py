@@ -795,19 +795,19 @@ CORE_REGISTER = {
 #            regValue = conversion.int2float(regValue)
 #        return regValue
 
-#    def registerNameToIndex(self, reg):
-#        """
-#        return register index based on name.
-#        If reg is a string, find the number associated to this register
-#        in the lookup table CORE_REGISTER
-#        """
-#        if isinstance(reg, str):
-#            try:
-#                reg = CORE_REGISTER[reg.lower()]
-#            except KeyError:
-#                logging.error('cannot find %s core register', reg)
-#                return
-#        return reg
+    def registerNameToIndex(self, reg):
+        """
+        return register index based on name.
+        If reg is a string, find the number associated to this register
+        in the lookup table CORE_REGISTER
+        """
+        if isinstance(reg, str):
+            try:
+                reg = CORE_REGISTER[reg.lower()]
+            except KeyError:
+                logging.error('cannot find %s core register', reg)
+                return
+        return reg
 
 #    def readCoreRegisterRaw(self, reg):
 #        """
@@ -1092,7 +1092,7 @@ CORE_REGISTER = {
             resp += conversion.intToHex8(regValue)
             logging.debug("GDB reg: %s = 0x%X", reg.name, regValue)
 
-#        return resp
+        return resp
 
 #    def setRegisterContext(self, data):
 #        """

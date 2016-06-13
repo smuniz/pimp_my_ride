@@ -294,8 +294,8 @@ class GDBServer(threading.Thread):
         elif msg[1] == 'P':
             return self.writeRegister(msg[2:]), 1, 0
 
-        #elif msg[1] == 'q':
-        #    return self.handleQuery(msg[2:]), 1, 0
+        elif msg[1] == 'q':
+            return self.handleQuery(msg[2:]), 1, 0
 
         elif msg[1] == 'Q':
             return self.handleGeneralSet(msg[2:]), 1, 0
@@ -303,8 +303,8 @@ class GDBServer(threading.Thread):
         elif msg[1] == 'S' or msg[1] == 's':
             return self.step()
 
-        #elif msg[1] == 'v':
-        #    return self.flashOp(msg[2:]), 1, 0
+        elif msg[1] == 'v':
+            return self.flashOp(msg[2:]), 1, 0
 
         elif msg[1] == 'X': # write memory with binary data
             return self.writeMemory(msg[2:]), 1, 0
@@ -420,12 +420,12 @@ class GDBServer(threading.Thread):
         self.target.halt()
         return self.createRSPPacket(self.target.getTResponse()), 0, 0
 
-    #def flashOp(self, data):
-    #    ops = data.split(':')[0]
-    #    self.logger.debug("flash op: %s", ops)
+    def flashOp(self, data):
+        ops = data.split(':')[0]
+        self.logger.debug("flash op: %s", ops)
 
-    #    if ops == 'FlashErase':
-    #        return self.createRSPPacket("OK")
+        if ops == 'FlashErase':
+            return self.createRSPPacket("OK")
 
     #    elif ops == 'FlashWrite':
     #        write_addr = int(data.split(':')[1], 16)
@@ -482,11 +482,15 @@ class GDBServer(threading.Thread):
 
     #        return self.createRSPPacket("OK")
 
-    #    elif 'Cont' in ops:
-    #        if 'Cont?' in ops:
-    #            return self.createRSPPacket("vCont;c;s;t")
+        elif 'Cont' in ops:
+            if 'Cont?' in ops:
+                # IDA-GDBServer sniff : $vCont;c;C;t;s;S;r
+                return self.createRSPPacket("vCont;c;s;t")
+            elif 'Cont;s' in ops:
+                # TODO Add single step code here
+                return self.createRSPPacket(self.target.getTResponse())
 
-    #    return None
+        return None
 
     def unescape(self, data):
         data_idx = 0
@@ -591,9 +595,11 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket("OK")
 
     def getRegisters(self):
+        """Return the complete list of registers."""
         return self.createRSPPacket(self.target.getRegisterContext())
 
     def setRegisters(self, data):
+        """Return the value of a specific register."""
         self.target.setRegisterContext(data)
         return self.createRSPPacket("OK")
 
@@ -621,21 +627,27 @@ class GDBServer(threading.Thread):
             resp = ';'.join(features)
             return self.createRSPPacket(resp)
 
-        elif query[0] == 'Xfer':
+        elif query[0] == 'fThreadInfo':
+            return self.createRSPPacket("m26a")
 
-            if query[1] == 'features' and query[2] == 'read' and \
-               query[3] == 'target.xml':
-                data = query[4].split(',')
-                resp = self.handleQueryXML('read_feature', int(data[0], 16), int(data[1].split('#')[0], 16))
-                return self.createRSPPacket(resp)
+        elif query[0] == 'sThreadInfo':
+            return self.createRSPPacket("l")
 
-            elif query[1] == 'memory-map' and query[2] == 'read':
-                data = query[4].split(',')
-                resp = self.handleQueryXML('memory_map', int(data[0], 16), int(data[1].split('#')[0], 16))
-                return self.createRSPPacket(resp)
+        #elif query[0] == 'Xfer':
 
-            else:
-                return None
+        #    if query[1] == 'features' and query[2] == 'read' and \
+        #       query[3] == 'target.xml':
+        #        data = query[4].split(',')
+        #        resp = self.handleQueryXML('read_feature', int(data[0], 16), int(data[1].split('#')[0], 16))
+        #        return self.createRSPPacket(resp)
+
+        #    elif query[1] == 'memory-map' and query[2] == 'read':
+        #        data = query[4].split(',')
+        #        resp = self.handleQueryXML('memory_map', int(data[0], 16), int(data[1].split('#')[0], 16))
+        #        return self.createRSPPacket(resp)
+
+        #    else:
+        #        return None
 
         elif query[0] == 'C#b4':
             return self.createRSPPacket("")
