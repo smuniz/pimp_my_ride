@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-_author__       = "Sebastian 'topo' Muniz"
-__copyright__   = "Copyright 2016, Recurity Labs GmbH"
+__author__       = "Sebastian 'topo' Muniz"
+__copyright__   = "Copyright 2016"
 __credits__     = []
 __license__     = "GPL"
 __version__     = "0.1"
@@ -26,10 +26,6 @@ except ImportError, err:
     print "Import Error : %s" % err
     exit(1)
 
-
-__all__ = ["Pimped"]
-
-
 try:
     from elftools.elf.elffile import ELFFile
 
@@ -47,6 +43,8 @@ except ImportError, err:
     print "Missing 'pyelftools' module."
     exit(1)
 
+__all__ = ["Pimped"]
+
 def autodetect_architecture(image):
     """Detect the current architecture in use by the disassembler being
     used.
@@ -54,9 +52,9 @@ def autodetect_architecture(image):
     """
     architecture = image.get_machine_arch()
     bits = image.elfclass
-    little_endian = image.little_endian
+    is_little_endian = image.little_endian
 
-    return (architecture, bits, little_endian)
+    return (architecture, bits, is_little_endian)
 
 def get_gdb_server_settings(args):
     """Set GDB server settings."""
@@ -118,9 +116,9 @@ def main():
     #
     # Obtain the memory ranges where we're going to operate.
     #
-    start_address = 0x04004FD
+    start_address = 0x004007e8 #image.header.e_entry
 
-    ret_address = 0x400502
+    ret_address = 0x0400810 #0x400502
 
     #
     # Read the code to emulate
@@ -140,11 +138,11 @@ def main():
     try:
         # Set architecture specific types for the current binary being
         # analyzed.
-        architecture, bits, little_endian = autodetect_architecture(image)
+        architecture, bits, is_little_endian = autodetect_architecture(image)
 
         # Initialize the emulator and set the operational parameters.
         print "[+] Configuring emulator..."
-        emu = PimpMyRide(architecture, bits, little_endian,
+        emu = PimpMyRide(architecture, bits, is_little_endian,
                 log_level=LOG_LEVELS.get(args.log_level))
 
         emu.add_memory_area(addr, len(code))
@@ -169,8 +167,7 @@ def main():
         return
 
     except KeyboardInterrupt:
-        print ""
-        print "[+] Termination requested..."
+        print "\n[+] Termination requested..."
 
     except Exception as e:
         print "[-] Uncaught exception : %s" % e

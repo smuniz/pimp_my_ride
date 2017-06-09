@@ -490,7 +490,8 @@ class GDBServer(threading.Thread):
                 # TODO Add single step code here
                 return self.createRSPPacket(self.target.getTResponse())
 
-        return None
+        return self.createRSPPacket("OK")
+        #return None
 
     def unescape(self, data):
         data_idx = 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-_author__       = "Sebastian 'topo' Muniz"
-__copyright__   = "Copyright 2016, Recurity Labs GmbH"
+__author__       = "Sebastian 'topo' Muniz"
+__copyright__   = "Copyright 2016"
 __credits__     = []
 __license__     = "GPL"
 __version__     = "0.1"
@@ -18,6 +18,7 @@ import unicorn as uc
 from unicorn.arm64_const import *
 from unicorn.arm_const import *
 from unicorn.x86_const import *
+from unicorn.mips_const import *
 
 import capstone as cs
 
@@ -51,8 +52,8 @@ class PimpMyRide(object):
     
     """
 
-    def __init__(self, architecture, bits, little_endian, compiler=COMPILE_GCC, \
-        stack=0xf000000, stack_size=3, log_level=LOG_LEVELS['info']):
+    def __init__(self, architecture, bits, is_little_endian, compiler=COMPILE_GCC, \
+        stack=0x1000, stack_size=5, log_level=LOG_LEVELS['info']):
 
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 
@@ -90,12 +91,17 @@ class PimpMyRide(object):
             raise PimpMyRideException("PowerPC is unsupported.")
 
         elif architecture == "MIPS":
-            #import unicorn.mips_const import *
+            cur_arch = uc.UC_ARCH_MIPS
+            if is_little_endian:
+                cur_mode = uc.UC_MODE_MIPS32 + uc.UC_MODE_LITTLE_ENDIAN
+            else:
+                cur_mode = uc.UC_MODE_MIPS32 + uc.UC_MODE_BIG_ENDIAN
 
-            #cur_arch = uc.UC_ARCH_MIPS
-            #cur_mode = uc.UC_MODE_MIPS32 + uc.UC_MODE_BIG_ENDIAN
-
-            raise PimpMyRideException("MIPS is not yet implemented.")
+            cs_arch = cs.CS_ARCH_MIPS
+            if is_little_endian:
+                cs_mode = cs.CS_MODE_MIPS32 + cs.CS_MODE_LITTLE_ENDIAN
+            else:
+                cs_mode = cs.CS_MODE_MIPS32 + cs.CS_MODE_BIG_ENDIAN
 
         elif architecture == "ARM":
             cur_arch = uc.UC_ARCH_ARM
@@ -240,13 +246,13 @@ class PimpMyRide(object):
         if not len(self.__memory_contents):
             raise PimpMyRideException("No memory contents specified")
 
-        self.__uc = uc.Uc(self.architecture, self.mode) # create new Unicorn
-                                                        # instance.
+        # Create a new Unicorn instance.
+        self.__uc = uc.Uc(self.architecture, self.mode)
 
-        self.__cs = cs.Cs(self._cs_arch, self._cs_mode) # create new Unicorn
-                                                        # instance.
+        # Create a new Capstone instance.
+        self.__cs = cs.Cs(self._cs_arch, self._cs_mode) 
 
-        # Setup the register configuration
+        # Setup the register configuration.
         self._setup_registers()
 
         #
@@ -326,6 +332,19 @@ class PimpMyRide(object):
             self.REG_ARGS = [UC_ARM64_REG_X0, UC_ARM64_REG_X1, UC_ARM64_REG_X2, UC_ARM64_REG_X3,
                     UC_ARM64_REG_X4, UC_ARM64_REG_X5, UC_ARM64_REG_X6, UC_ARM64_REG_X7]
 
+        elif self.architecture == uc.UC_ARCH_MIPS:
+            if self.mode == uc.UC_MODE_MIPS32:
+                self.step = 4
+                self.pack_fmt = '<I'
+            elif self.mode == uc.UC_MODE_MIPS64:
+                self.step = 8
+                self.pack_fmt = '<Q'
+            self.REG_PC = UC_MIPS_REG_PC
+            self.REG_SP = UC_MIPS_REG_SP
+            self.REG_RA = UC_MIPS_REG_RA
+            self.REG_RES = UC_MIPS_REG_V0
+            self.REG_ARGS = [UC_MIPS_REG_A0, UC_MIPS_REG_A1, UC_MIPS_REG_A2, UC_MIPS_REG_A3]
+
     def _align_address(self, address):
         """Align the specified address to a page boundary."""
         return address // PAGE_SIZE * PAGE_SIZE
@@ -335,7 +354,7 @@ class PimpMyRide(object):
         contents.
         """
         # Initialize the stack memory.
-        stack_size = (self.stack_size+1) * PAGE_SIZE
+        stack_size = (self.stack_size) * PAGE_SIZE
 
         self._memory_map(self.stack, stack_size)
         self.write_memory(self.stack, "\x00" * stack_size)
@@ -367,8 +386,7 @@ class PimpMyRide(object):
                     start_address, end_address))
                 return True
 
-        
-        # TODO Make this better by adding this area to the other memory areas
+        # FIXME Make this better by adding this area to the other memory areas
         # (probably with different settings & permissions).
         if start_address >= self.stack and end_address <= (self.stack_size * PAGE_SIZE) + self.stack:
             self.logger.debug(
@@ -451,84 +469,115 @@ class PimpMyRide(object):
         """..."""
         self.logger.debug("Registers:")
         try:
-            if self.mode == uc.UC_MODE_16:
-                ax = self.__uc.reg_read(UC_X86_REG_AX)
-                bx = self.__uc.reg_read(UC_X86_REG_BX)
-                cx = self.__uc.reg_read(UC_X86_REG_CX)
-                dx = self.__uc.reg_read(UC_X86_REG_DX)
-                di = self.__uc.reg_read(UC_X86_REG_SI)
-                si = self.__uc.reg_read(UC_X86_REG_DI)
-                bp = self.__uc.reg_read(UC_X86_REG_BP)
-                sp = self.__uc.reg_read(UC_X86_REG_SP)
-                ip = self.__uc.reg_read(UC_X86_REG_PC)
-                eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
+            if self.architecture == uc.UC_ARCH_MIPS:
+                    zr = self.__uc.reg_read(UC_MIPS_REG_ZERO)
+                    at = self.__uc.reg_read(UC_MIPS_REG_AT)
+                    v0 = self.__uc.reg_read(UC_MIPS_REG_V0)
+                    v1 = self.__uc.reg_read(UC_MIPS_REG_V1)
+                    a0 = self.__uc.reg_read(UC_MIPS_REG_A0)
+                    a1 = self.__uc.reg_read(UC_MIPS_REG_A1)
+                    a2 = self.__uc.reg_read(UC_MIPS_REG_A2)
+                    a3 = self.__uc.reg_read(UC_MIPS_REG_A3)
+                    t0 = self.__uc.reg_read(UC_MIPS_REG_T0)
+                    t1 = self.__uc.reg_read(UC_MIPS_REG_T1)
+                    t2 = self.__uc.reg_read(UC_MIPS_REG_T2)
+                    t3 = self.__uc.reg_read(UC_MIPS_REG_T3)
+                    t4 = self.__uc.reg_read(UC_MIPS_REG_T4)
+                    t5 = self.__uc.reg_read(UC_MIPS_REG_T5)
+                    t6 = self.__uc.reg_read(UC_MIPS_REG_T6)
+                    t7 = self.__uc.reg_read(UC_MIPS_REG_T7)
+                    gp = self.__uc.reg_read(UC_MIPS_REG_GP)
+                    sp = self.__uc.reg_read(UC_MIPS_REG_SP)
+                    pc = self.__uc.reg_read(UC_MIPS_REG_PC)
+                    ra = self.__uc.reg_read(UC_MIPS_REG_RA)
+                    bv = self.__uc.reg_read(UC_MIPS_REG_CC7)
 
-                self.logger.debug("    AX = 0x%04x BX = 0x%04x CX = 0x%04x DX = 0x%04x" % (ax, bx, cx, dx))
-                self.logger.debug("    DI = 0x%04x SI = 0x%04x BP = 0x%04x SP = 0x%04x" % (di, si, bp, sp))
-                self.logger.debug("    IP = 0x%04x" % eip)     
+                    self.logger.debug("    $0 = 0x%08x at = 0x%08x v0 = 0x%08x v1 = 0x%08x" % (zr, at, v0, v1))
+                    self.logger.debug("    a0 = 0x%08x a1 = 0x%08x a2 = 0x%08x a3 = 0x%08x" % (a0, a1, a2, a3))
+                    self.logger.debug("    t0 = 0x%08x t1 = 0x%08x t2 = 0x%08x t3 = 0x%08x" % (t0, t1, t2, t3))
+                    self.logger.debug("    t4 = 0x%08x t5 = 0x%08x t6 = 0x%08x t7 = 0x%08x" % (t4, t5, t6, t7))
+                    self.logger.debug("    gp = 0x%08x sp = 0x%08x pc = 0x%08x ra = 0x%08x" % (gp, sp, pc, ra))
+                    self.logger.debug("    BadVAddr = 0x%08X" % (bv))
 
-            elif self.mode == uc.UC_MODE_32:
-                eax = self.__uc.reg_read(UC_X86_REG_EAX)
-                ebx = self.__uc.reg_read(UC_X86_REG_EBX)
-                ecx = self.__uc.reg_read(UC_X86_REG_ECX)
-                edx = self.__uc.reg_read(UC_X86_REG_EDX)
-                edi = self.__uc.reg_read(UC_X86_REG_ESI)
-                esi = self.__uc.reg_read(UC_X86_REG_EDI)
-                ebp = self.__uc.reg_read(UC_X86_REG_EBP)
-                esp = self.__uc.reg_read(UC_X86_REG_ESP)
-                eip = self.__uc.reg_read(UC_X86_REG_EIP)
-                eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
+            elif self.architecture == uc.UC_ARCH_X86:
+                if self.mode == uc.UC_MODE_16:
+                    ax = self.__uc.reg_read(UC_X86_REG_AX)
+                    bx = self.__uc.reg_read(UC_X86_REG_BX)
+                    cx = self.__uc.reg_read(UC_X86_REG_CX)
+                    dx = self.__uc.reg_read(UC_X86_REG_DX)
+                    di = self.__uc.reg_read(UC_X86_REG_SI)
+                    si = self.__uc.reg_read(UC_X86_REG_DI)
+                    bp = self.__uc.reg_read(UC_X86_REG_BP)
+                    sp = self.__uc.reg_read(UC_X86_REG_SP)
+                    ip = self.__uc.reg_read(UC_X86_REG_PC)
+                    eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
 
-                self.logger.debug("    EAX = 0x%08x EBX = 0x%08x ECX = 0x%08x EDX = 0x%08x" % (eax, ebx, ecx, edx))
-                self.logger.debug("    EDI = 0x%08x ESI = 0x%08x EBP = 0x%08x ESP = 0x%08x" % (edi, esi, ebp, esp))
-                self.logger.debug("    EIP = 0x%08x" % eip)
+                    self.logger.debug("    AX = 0x%04x BX = 0x%04x CX = 0x%04x DX = 0x%04x" % (ax, bx, cx, dx))
+                    self.logger.debug("    DI = 0x%04x SI = 0x%04x BP = 0x%04x SP = 0x%04x" % (di, si, bp, sp))
+                    self.logger.debug("    IP = 0x%04x" % eip)     
 
-            elif self.mode == uc.UC_MODE_64:
-                rax = self.__uc.reg_read(UC_X86_REG_RAX)
-                rbx = self.__uc.reg_read(UC_X86_REG_RBX)
-                rcx = self.__uc.reg_read(UC_X86_REG_RCX)
-                rdx = self.__uc.reg_read(UC_X86_REG_RDX)
-                rdi = self.__uc.reg_read(UC_X86_REG_RSI)
-                rsi = self.__uc.reg_read(UC_X86_REG_RDI)
-                rbp = self.__uc.reg_read(UC_X86_REG_RBP)
-                rsp = self.__uc.reg_read(UC_X86_REG_RSP)
-                rip = self.__uc.reg_read(UC_X86_REG_RIP)
-                r8 = self.__uc.reg_read(UC_X86_REG_R8)
-                r9 = self.__uc.reg_read(UC_X86_REG_R9)
-                r10 = self.__uc.reg_read(UC_X86_REG_R10)
-                r11 = self.__uc.reg_read(UC_X86_REG_R11)
-                r12 = self.__uc.reg_read(UC_X86_REG_R12)
-                r13 = self.__uc.reg_read(UC_X86_REG_R13)
-                r14 = self.__uc.reg_read(UC_X86_REG_R14)
-                r15 = self.__uc.reg_read(UC_X86_REG_R15)
-                eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
+                elif self.mode == uc.UC_MODE_32:
+                    eax = self.__uc.reg_read(UC_X86_REG_EAX)
+                    ebx = self.__uc.reg_read(UC_X86_REG_EBX)
+                    ecx = self.__uc.reg_read(UC_X86_REG_ECX)
+                    edx = self.__uc.reg_read(UC_X86_REG_EDX)
+                    edi = self.__uc.reg_read(UC_X86_REG_ESI)
+                    esi = self.__uc.reg_read(UC_X86_REG_EDI)
+                    ebp = self.__uc.reg_read(UC_X86_REG_EBP)
+                    esp = self.__uc.reg_read(UC_X86_REG_ESP)
+                    eip = self.__uc.reg_read(UC_X86_REG_EIP)
+                    eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
 
-                self.logger.debug("    RAX = 0x%016x RBX = 0x%016x RCX = 0x%016x RDX = 0x%016x" % (rax, rbx, rcx, rdx))
-                self.logger.debug("    RDI = 0x%016x RSI = 0x%016x RBP = 0x%016x RSP = 0x%016x" % (rdi, rsi, rbp, rsp))
-                self.logger.debug("    R$8 = 0x%016x R9  = 0x%016x R10 = 0x%016x R11 = 0x%016x" % (r8, r9, r10, r11))
-                self.logger.debug("    R12 = 0x%016x R13 = 0x%016x R14 = 0x%016x R15 = 0x%016x" % (r12, r13, r14, r15))
-                self.logger.debug("    RIP = 0x%016x" % rip)
+                    self.logger.debug("    EAX = 0x%08x EBX = 0x%08x ECX = 0x%08x EDX = 0x%08x" % (eax, ebx, ecx, edx))
+                    self.logger.debug("    EDI = 0x%08x ESI = 0x%08x EBP = 0x%08x ESP = 0x%08x" % (edi, esi, ebp, esp))
+                    self.logger.debug("    EIP = 0x%08x" % eip)
 
-            self.logger.debug("    EFLAGS:")
-            self.logger.debug("    CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d " \
-                    "NT=%d RF=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d"
-                    % (self._get_bit(eflags, 0),
-                       self._get_bit(eflags, 2),
-                       self._get_bit(eflags, 4),
-                       self._get_bit(eflags, 6),
-                       self._get_bit(eflags, 7),
-                       self._get_bit(eflags, 8),
-                       self._get_bit(eflags, 9),
-                       self._get_bit(eflags, 10),
-                       self._get_bit(eflags, 11),
-                       self._get_bit(eflags, 12) + self._get_bit(eflags, 13) * 2,
-                       self._get_bit(eflags, 14),
-                       self._get_bit(eflags, 16),
-                       self._get_bit(eflags, 17),
-                       self._get_bit(eflags, 18),
-                       self._get_bit(eflags, 19),
-                       self._get_bit(eflags, 20),
-                       self._get_bit(eflags, 21)))
+                elif self.mode == uc.UC_MODE_64:
+                    rax = self.__uc.reg_read(UC_X86_REG_RAX)
+                    rbx = self.__uc.reg_read(UC_X86_REG_RBX)
+                    rcx = self.__uc.reg_read(UC_X86_REG_RCX)
+                    rdx = self.__uc.reg_read(UC_X86_REG_RDX)
+                    rdi = self.__uc.reg_read(UC_X86_REG_RSI)
+                    rsi = self.__uc.reg_read(UC_X86_REG_RDI)
+                    rbp = self.__uc.reg_read(UC_X86_REG_RBP)
+                    rsp = self.__uc.reg_read(UC_X86_REG_RSP)
+                    rip = self.__uc.reg_read(UC_X86_REG_RIP)
+                    r8 = self.__uc.reg_read(UC_X86_REG_R8)
+                    r9 = self.__uc.reg_read(UC_X86_REG_R9)
+                    r10 = self.__uc.reg_read(UC_X86_REG_R10)
+                    r11 = self.__uc.reg_read(UC_X86_REG_R11)
+                    r12 = self.__uc.reg_read(UC_X86_REG_R12)
+                    r13 = self.__uc.reg_read(UC_X86_REG_R13)
+                    r14 = self.__uc.reg_read(UC_X86_REG_R14)
+                    r15 = self.__uc.reg_read(UC_X86_REG_R15)
+                    eflags = self.__uc.reg_read(UC_X86_REG_EFLAGS)
+
+                    self.logger.debug("    RAX = 0x%016x RBX = 0x%016x RCX = 0x%016x RDX = 0x%016x" % (rax, rbx, rcx, rdx))
+                    self.logger.debug("    RDI = 0x%016x RSI = 0x%016x RBP = 0x%016x RSP = 0x%016x" % (rdi, rsi, rbp, rsp))
+                    self.logger.debug("    R$8 = 0x%016x R9  = 0x%016x R10 = 0x%016x R11 = 0x%016x" % (r8, r9, r10, r11))
+                    self.logger.debug("    R12 = 0x%016x R13 = 0x%016x R14 = 0x%016x R15 = 0x%016x" % (r12, r13, r14, r15))
+                    self.logger.debug("    RIP = 0x%016x" % rip)
+
+                self.logger.debug("    EFLAGS:")
+                self.logger.debug("    CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d " \
+                        "NT=%d RF=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d"
+                        % (self._get_bit(eflags, 0),
+                           self._get_bit(eflags, 2),
+                           self._get_bit(eflags, 4),
+                           self._get_bit(eflags, 6),
+                           self._get_bit(eflags, 7),
+                           self._get_bit(eflags, 8),
+                           self._get_bit(eflags, 9),
+                           self._get_bit(eflags, 10),
+                           self._get_bit(eflags, 11),
+                           self._get_bit(eflags, 12) + self._get_bit(eflags, 13) * 2,
+                           self._get_bit(eflags, 14),
+                           self._get_bit(eflags, 16),
+                           self._get_bit(eflags, 17),
+                           self._get_bit(eflags, 18),
+                           self._get_bit(eflags, 19),
+                           self._get_bit(eflags, 20),
+                           self._get_bit(eflags, 21)))
 
         except uc.UcError as e:
             #self.logger.debug("Exception: %s" % e)
@@ -556,6 +605,8 @@ class PimpMyRide(object):
             timeout = 0
             count = 1
 
+            self.logger.info("Starting emulation at 0x%08X" % self.start_address)
+
             self.__uc.emu_start(self.start_address,
                                 self.return_address,
                                 timeout,
@@ -581,9 +632,8 @@ class PimpMyRide(object):
         """..."""
         try:
             for i in self.__cs.disasm(str(opcodes), addr):
-                self.logger.debug("    %s 0x%x:\t%s\t%s" % (
-                        " ".join(
-                            ["%02X" % ord(x) for x in str(i.bytes)]), i.address, i.mnemonic, i.op_str))
+                self.logger.debug("    0x%x  %s\t%s\t%s" % (
+                        i.address, " ".join(["%02X" % ord(x) for x in str(i.bytes)]), i.mnemonic, i.op_str))
         except cs.CsError, err:
             raise PimpMyRideException(e)
 
