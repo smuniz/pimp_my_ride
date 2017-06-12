@@ -153,7 +153,7 @@ class GDBServer(threading.Thread):
 
             self.logger.info("One client connected!")
 
-            self.logger.info("Starting emulator...")
+            self.logger.debug("Configuring emulator...")
             self.target.init()
 
             while True:
@@ -244,7 +244,7 @@ class GDBServer(threading.Thread):
             self.logger.debug('msg ignored: first char != $')
             return None, 0, 0
 
-        self.logger.debug('-->>>>>>>>>>>> GDB rsp packet: %s', msg)
+        self.logger.warning('GDB RSP packet: %s', msg)
 
         # query command
         if msg[1] == '?':
@@ -262,6 +262,9 @@ class GDBServer(threading.Thread):
         #    #else:
         #    #    pass
             return self.enableExtendedMode(), 1, 0
+
+        #elif msg[1] == 'B':
+        #    return BLA
 
         # we don't send immediately the response for C and S commands
         elif msg[1] == 'C' or msg[1] == 'c':
@@ -333,12 +336,13 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket(resp)
 
     def kill(self):
-        self.logger.debug("GDB kill")
+        self.logger.info("GDB session killed")
         # Keep target halted and leave vector catches if in persistent mode.
         if not self.persist:
             #self.board.target.setVectorCatchFault(False) # TODO check this
             #self.board.target.setVectorCatchReset(False) # TODO 
-            self.target.resume()
+            #self.target.resume() # TODO FIXME
+            pass
         return self.createRSPPacket("")
 
     def breakpoint(self, data):
@@ -347,10 +351,18 @@ class GDBServer(threading.Thread):
         addr = int(split[1], 16)
         self.logger.debug("GDB breakpoint %d @ %x" % (int(data[1]), addr))
 
-        if data[1] == '0' and not self.soft_bkpt_as_hard:   
-            # Empty response indicating no support for software breakpoints
-            return self.createRSPPacket("")
+        self.logger.error(data)
+        self.logger.error(self.soft_bkpt_as_hard)
 
+        if data[1] == '0':
+            if not self.soft_bkpt_as_hard:   
+                # Empty response indicating no support for software breakpoints
+                return self.createRSPPacket("")
+            else:
+                self.target.setBreakpoint(addr)
+                return self.createRSPPacket("OK")
+
+        raise Exception("matanga")
         # handle hardware breakpoint Z1/z1
         # and software breakpoint Z0/z0
         if data[1] == '1' or (self.soft_bkpt_as_hard and data[1] == '0'):
@@ -493,13 +505,17 @@ class GDBServer(threading.Thread):
 
     #        return self.createRSPPacket("OK")
 
-        elif 'Cont' in ops:
-            if 'Cont?' in ops:
+        elif ops.startswith('Cont'):
+            ops = ops[4:]
+            if '?' in ops:
                 # IDA-GDBServer sniff : $vCont;c;C;t;s;S;r
                 return self.createRSPPacket("vCont;c;s;t")
-            elif 'Cont;s' in ops:
-                # TODO Add single step code here
+            elif ';s' in ops:
+                self.target.resume(1)
                 return self.createRSPPacket(self.target.getTResponse())
+            elif ';c' in ops:
+                self.target.resume(0)
+                return self.createRSPPacket("OK")#self.target.getTResponse())
 
         elif "MustReplyEmpty" in ops:
             return self.createRSPPacket("")
@@ -559,7 +575,7 @@ class GDBServer(threading.Thread):
 
         try:
             if length > 0:
-                self.target.writeMemory(addr, data)
+                self.target.writeMemory(addr, str(data))
                 # Flush so an exception is thrown now if invalid memory was accessed
                 self.target.flush()
             resp = "OK"
@@ -815,7 +831,6 @@ class GDBServer(threading.Thread):
             resp += '0'
         resp += checksum[2:]
 
-        #self.logger.debug('--<<<<<<<<<<<< GDB rsp packet: %s', resp)
         return resp
 
     def ack(self):

@@ -64,7 +64,7 @@ def get_gdb_server_settings(args):
         #'step_into_interrupt' : args.step_into_interrupt,
         #'break_on_reset' : args.break_on_reset,
         'persist' : args.persist,
-        #'soft_bkpt_as_hard' : args.soft_bkpt_as_hard,
+        'soft_bkpt_as_hard' : True,#args.soft_bkpt_as_hard, # FIXME
         #'chip_erase': get_chip_erase(args),
         #'hide_programming_progress' : args.hide_progress,
         #'fast_program' : args.fast_program,

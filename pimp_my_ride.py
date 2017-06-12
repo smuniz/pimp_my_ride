@@ -52,8 +52,8 @@ class PimpMyRide(object):
     
     """
 
-    def __init__(self, architecture, bits, is_little_endian, compiler=COMPILE_GCC, \
-        stack, stack_size, log_level=LOG_LEVELS['info']):
+    def __init__(self, architecture, bits, is_little_endian, stack, stack_size,
+            log_level=LOG_LEVELS['info'], compiler=COMPILE_GCC):
 
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 
@@ -83,6 +83,8 @@ class PimpMyRide(object):
         self.stack_size = stack_size
 
         self.compiler = compiler
+
+        self.breakpoints = list()
 
         # Convert IDA architectures IDs to our own.
         if architecture == "ppc": # FIXME : pyelftools does not recognize
@@ -270,15 +272,27 @@ class PimpMyRide(object):
         #
         self.__initialize_registers()
 
-    def start(self):
+    def start(self, count=0, timeout=0):
         """Start the emulation phase with the parameters previously defined."""
-        #for i in self.__cs.disasm(self.code, self.memory_address):
-        #    self.logger.debug("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
-
         #
         # Proceed to the emulation phase.
         #
-        self.__emulate()
+        try:
+            self.logger.info("Starting emulation at 0x%08X (count=%d)" % (
+                    self.start_address, count))
+
+            self.__uc.emu_start(self.start_address,
+                                self.return_address,
+                                timeout,
+                                count)
+
+        except uc.UcError, err:
+            self.logger.debug(format_exc())
+            self.logger.error("Emulation error : %s" % err)
+
+            self.__show_regs()
+
+            #raise PimpMyRideException(err)
 
     def _setup_registers(self):
         if self.architecture == uc.UC_ARCH_X86:
@@ -480,8 +494,10 @@ class PimpMyRide(object):
                 "gp" : UC_MIPS_REG_GP, #=30
                 "sp" : UC_MIPS_REG_SP, #=31
                 "fp" : UC_MIPS_REG_FP, #=32
-                "s8" : UC_MIPS_REG_S8, #=32
+                #"s8" : UC_MIPS_REG_S8, #=32
                 "ra" : UC_MIPS_REG_RA, #=33
+                "hi" : UC_MIPS_REG_HI, #= 129
+                "lo" : UC_MIPS_REG_LO, #= 130
                 "pc" : UC_MIPS_REG_PC, #= 1
                 #UC_MIPS_REG_HI0, #=45
                 #UC_MIPS_REG_HI1, #=46
@@ -527,8 +543,8 @@ class PimpMyRide(object):
         """..."""
         reg_idx = self._reg_map(reg_name)
         reg_val = self.__uc.reg_read(reg_idx)
-        print "_" * 40
-        self.logger.info("Requesting register %s = 0x%08X" % (reg_name, reg_val))
+        #print "_" * 40
+        #self.logger.info("Requesting register %s = 0x%08X" % (reg_name, reg_val))
 
         return reg_val
 
@@ -668,27 +684,6 @@ class PimpMyRide(object):
             self.logger.debug("Commiting register %s (%d) value 0x%08X" % (reg, reg_idx, value))
             self.__uc.reg_write(reg_idx,  value)
 
-    def __emulate(self):
-        """Start the emulation and process results."""
-        try:
-            timeout = 0
-            count = 1
-
-            self.logger.info("Starting emulation at 0x%08X" % self.start_address)
-
-            self.__uc.emu_start(self.start_address,
-                                self.return_address,
-                                timeout,
-                                count)
-
-        except uc.UcError, err:
-            self.logger.debug("Emulation error : %s" % err)
-                #self.logger.debug(format_exc())
-
-            self.__show_regs()
-
-            raise PimpMyRideException(err)
-
     def write_register(self, register, value):
         """Write the specified value into the specified register."""
         self.__regs[register] = value
@@ -729,7 +724,21 @@ class PimpMyRide(object):
             self._show_disasm_inst(opcodes, address)
             self.logger.debug("")
 
+            new_pc = self.read_register("pc")
+            self.logger.warning("New address 0x%08X" % new_pc)
+            self.start_address = new_pc
+            self.logger.debug("_" * 80)
+
+            #self.__uc.reg_write(UC_MIPS_REG_PC,  address)
+
+            # Check breakpoint
+            if address in self.breakpoints:
+                self.logger.debug("_" * 80)
+                self.logger.info("Breakpoint hit at 0x%08X" % address)
+                self.logger.debug("_" * 80)
+
             # TODO : call user-defined function now?
+
         except uc.UcError as err:
             self.logger.error("Error (CODE hook): %s" % err)
 
@@ -742,4 +751,14 @@ class PimpMyRide(object):
             # TODO : call user-defined function now?
         except uc.UcError as err:
             self.logger.error("Error (MEMORY hook): %s" % err)
+
+
+    def set_breakpoint(self, addr):
+        self.breakpoints.append(addr)
+        return
+
+    def remove_breakpoint(self, addr):
+        if addr in self.breakpoints:
+            self.breakpoints.remove(addr)
+        return
 
