@@ -144,9 +144,11 @@ def main():
         # Initialize the emulator and set the operational parameters.
         print "[+] Configuring emulator..."
         stack=0x1000
+        stack_size = 5
 
         emu = PimpMyRide(architecture, bits, is_little_endian,
-                log_level=LOG_LEVELS.get(args.log_level), stack=stack)
+                log_level=LOG_LEVELS.get(args.log_level), stack=stack,
+                stack_size=stack_size)
 
         emu.add_memory_area(addr, len(code))
         emu.add_memory_content(addr, code)
@@ -154,7 +156,7 @@ def main():
         emu.start_address = start_address
         emu.return_address = ret_address
         emu.write_register("pc", start_address)
-        emu.write_register("sp", stack * 5)
+        emu.write_register("sp", stack * stack_size)
 
         # Set tracing all instructions with internal callback.
         emu.trace_instructions()

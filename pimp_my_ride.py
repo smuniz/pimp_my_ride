@@ -53,7 +53,7 @@ class PimpMyRide(object):
     """
 
     def __init__(self, architecture, bits, is_little_endian, compiler=COMPILE_GCC, \
-        stack=0x1000, stack_size=5, log_level=LOG_LEVELS['info']):
+        stack, stack_size, log_level=LOG_LEVELS['info']):
 
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 
