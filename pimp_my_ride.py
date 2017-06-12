@@ -442,8 +442,10 @@ class PimpMyRide(object):
         mask = 1 << offset
         return 1 if (value & mask) > 0 else 0
 
-    def read_register(self, reg_name):
-        """..."""
+    def _reg_map(self, reg_name):
+        """Map register name to its corresponding index used by Unicorn."""
+
+        reg_map = None
 
         if self.architecture == uc.UC_ARCH_MIPS:
             reg_map = {
@@ -519,7 +521,16 @@ class PimpMyRide(object):
         else:
             raise Exception("Register map not implemented")
 
-        return self.__uc.reg_read(reg_map.get(reg_name, 0x99))
+        return reg_map.get(reg_name, 0x11223344)
+
+    def read_register(self, reg_name):
+        """..."""
+        reg_idx = self._reg_map(reg_name)
+        reg_val = self.__uc.reg_read(reg_idx)
+        print "_" * 40
+        self.logger.info("Requesting register %s = 0x%08X" % (reg_name, reg_val))
+
+        return reg_val
 
     def __show_regs(self):
         """..."""
@@ -653,7 +664,9 @@ class PimpMyRide(object):
             starts.
         """
         for reg, value in self.__regs.iteritems():
-            self.__uc.reg_write(reg, value)
+            reg_idx = self._reg_map(reg)
+            self.logger.debug("Commiting register %s (%d) value 0x%08X" % (reg, reg_idx, value))
+            self.__uc.reg_write(reg_idx,  value)
 
     def __emulate(self):
         """Start the emulation and process results."""
@@ -677,7 +690,7 @@ class PimpMyRide(object):
             raise PimpMyRideException(err)
 
     def write_register(self, register, value):
-        """Write the specified value into the specified regiuster."""
+        """Write the specified value into the specified register."""
         self.__regs[register] = value
 
     def result(self):

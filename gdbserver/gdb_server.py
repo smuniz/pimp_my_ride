@@ -238,7 +238,6 @@ class GDBServer(threading.Thread):
 
                 self.lock.release()
 
-
     def handleMsg(self, msg):
 
         if msg[0] != '$':
@@ -253,7 +252,7 @@ class GDBServer(threading.Thread):
             #return self.createRSPPacket("S05"), 1, 0
 
         # TODO make this right
-        #if msg[1] == '!':
+        if msg[1] == '!':
         #    # Enable extended mode. In extended mode, the remote server is made
         #    # persistent. The 'R' packet is used to restart the program being
         #    # debugged.
@@ -262,9 +261,7 @@ class GDBServer(threading.Thread):
         #    #    pass
         #    #else:
         #    #    pass
-
-        elif msg[1] == '!':
-            return self.enableExtendedMode()
+            return self.enableExtendedMode(), 1, 0
 
         # we don't send immediately the response for C and S commands
         elif msg[1] == 'C' or msg[1] == 'c':
@@ -534,7 +531,7 @@ class GDBServer(threading.Thread):
         length = int(length,16)
 
         if LOG_MEM:
-            self.logger.debug("GDB getMem: addr=%x len=%x", addr, length)
+            self.logger.debug("GDB getMemory: addr=%x len=%x", addr, length)
 
         try:
             val = ''
