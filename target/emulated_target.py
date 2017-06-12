@@ -124,7 +124,7 @@ CORE_REGISTER = {
                  }
 
 
-class EmulatedTarget(Target):
+class EmulatedTargetX86_64(Target):
 
 
     class RegisterInfo(object):
@@ -163,7 +163,7 @@ class EmulatedTarget(Target):
         ]
 
     def __init__(self, emu, log_level=logging.DEBUG):
-        super(EmulatedTarget, self).__init__(None)
+        super(EmulatedTargetX86_64, self).__init__(None)
 
         # setup logging
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"

@@ -263,6 +263,9 @@ class GDBServer(threading.Thread):
         #    #else:
         #    #    pass
 
+        elif msg[1] == '!':
+            return self.enableExtendedMode()
+
         # we don't send immediately the response for C and S commands
         elif msg[1] == 'C' or msg[1] == 'c':
             return self.resume()
@@ -277,7 +280,7 @@ class GDBServer(threading.Thread):
             return self.setRegisters(msg[2:]), 1, 0
 
         elif msg[1] == 'H':
-            return self.createRSPPacket(''), 1, 0
+            return self.handleSetThreadForSubsequentOps(msg[2:]), 1, 0
 
         elif msg[1] == 'k':
             return self.kill(), 1, 1
@@ -315,6 +318,17 @@ class GDBServer(threading.Thread):
         else:
             self.logger.error("Unknown RSP packet: %s", msg)
             return self.createRSPPacket(""), 1, 0
+
+    def enableExtendedMode(self):
+        self.logger.info("Enable Extended mode")
+
+        self.is_extended_mode_supported = False # TODO add support for this!
+
+        if self.is_extended_mode_supported:
+            resp = "OK"
+        else:
+            resp = ""
+        return self.createRSPPacket(resp)
 
     def detach(self, data):
         self.logger.info("Client detached")
@@ -490,8 +504,10 @@ class GDBServer(threading.Thread):
                 # TODO Add single step code here
                 return self.createRSPPacket(self.target.getTResponse())
 
-        return self.createRSPPacket("OK")
-        #return None
+        elif "MustReplyEmpty" in ops:
+            return self.createRSPPacket("")
+
+        return self.createRSPPacket("")
 
     def unescape(self, data):
         data_idx = 0
@@ -741,6 +757,11 @@ class GDBServer(threading.Thread):
             pass
 
         return self.createRSPPacket("")
+
+    def handleSetThreadForSubsequentOps(self, msg):
+        """Set thread for subsequent operations ('m', 'M', 'g', 'G', et.al.)."""
+        #print "-===>", msg
+        return self.createRSPPacket('OK')
 
     def handleGeneralSet(self, msg):
         self.logger.debug("GDB general set: %s", msg)

@@ -19,7 +19,8 @@ try:
     from pimp_my_ride import *
 
     from target.board import Board
-    from target.emulated_target import EmulatedTarget
+    from target.emulated_target import EmulatedTargetX86_64
+    from target.emulated_target_mips import EmulatedTargetMips
     from gdbserver.gdb_server import GDBServer
 
 except ImportError, err:
@@ -117,6 +118,7 @@ def main():
     # Obtain the memory ranges where we're going to operate.
     #
     start_address = 0x004007e8 #image.header.e_entry
+    #start_address = 
 
     ret_address = 0x0400810 #0x400502
 
@@ -154,7 +156,8 @@ def main():
         # Set tracing all instructions with internal callback.
         emu.trace_instructions()
 
-        board = Board(EmulatedTarget(emu))
+        #board = Board(EmulatedTargetX86_64(emu))
+        board = Board(EmulatedTargetMips(emu))
 
         print "[+] Initializing GDB server..."
         gdb = GDBServer(board, gdb_server_settings)

@@ -223,8 +223,8 @@ class PimpMyRide(object):
         # TODO
         pass
 
-    def start(self):
-        """Start the emulation phase with the parameters previously defined."""
+    def init(self):
+        """Initialize emulator settings previous to its usage."""
         #
         # Initialize Unicorn's operational parameters.
         #
@@ -270,6 +270,8 @@ class PimpMyRide(object):
         #
         self.__initialize_registers()
 
+    def start(self):
+        """Start the emulation phase with the parameters previously defined."""
         #for i in self.__cs.disasm(self.code, self.memory_address):
         #    self.logger.debug("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
 
@@ -442,28 +444,82 @@ class PimpMyRide(object):
 
     def read_register(self, reg_name):
         """..."""
-        # XXX
-        reg_map = {
-            "rax" : UC_X86_REG_RAX,
-            "rbx" : UC_X86_REG_RBX,
-            "rcx" : UC_X86_REG_RCX,
-            "rdx" : UC_X86_REG_RDX,
-            "rdi" : UC_X86_REG_RSI,
-            "rsi" : UC_X86_REG_RDI,
-            "rbp" : UC_X86_REG_RBP,
-            "rsp" : UC_X86_REG_RSP,
-            "rip" : UC_X86_REG_RIP,
-            "r8"  : UC_X86_REG_R8,
-            "r9"  : UC_X86_REG_R9,
-            "r10" : UC_X86_REG_R10,
-            "r11" : UC_X86_REG_R11,
-            "r12" : UC_X86_REG_R12,
-            "r13" : UC_X86_REG_R13,
-            "r14" : UC_X86_REG_R14,
-            "r15" : UC_X86_REG_R15,
-        }
 
-        return self.__uc.reg_read(reg_map[reg_name])
+        if self.architecture == uc.UC_ARCH_MIPS:
+            reg_map = {
+                "zero" : UC_MIPS_REG_ZERO, #=2
+                "at" : UC_MIPS_REG_AT, #=3
+                "v0" : UC_MIPS_REG_V0, #=4
+                "v1" : UC_MIPS_REG_V1, #=5
+                "a0" : UC_MIPS_REG_A0, #=6
+                "a1" : UC_MIPS_REG_A1, #=7
+                "a2" : UC_MIPS_REG_A2, #=8
+                "a3" : UC_MIPS_REG_A3, #=9
+                "t0" : UC_MIPS_REG_T0, #=10
+                "t1" : UC_MIPS_REG_T1, #=11
+                "t2" : UC_MIPS_REG_T2, #=12
+                "t3" : UC_MIPS_REG_T3, #=13
+                "t4" : UC_MIPS_REG_T4, #=14
+                "t5" : UC_MIPS_REG_T5, #=15
+                "t6" : UC_MIPS_REG_T6, #=16
+                "t7" : UC_MIPS_REG_T7, #=17
+                "s0" : UC_MIPS_REG_S0, #=18
+                "s1" : UC_MIPS_REG_S1, #=19
+                "s2" : UC_MIPS_REG_S2, #=20
+                "s3" : UC_MIPS_REG_S3, #=21
+                "s4" : UC_MIPS_REG_S4, #=22
+                "s5" : UC_MIPS_REG_S5, #=23
+                "s6" : UC_MIPS_REG_S6, #=24
+                "s7" : UC_MIPS_REG_S7, #=25
+                "t8" : UC_MIPS_REG_T8, #=26
+                "t9" : UC_MIPS_REG_T9, #=27
+                "k0" : UC_MIPS_REG_K0, #=28
+                "k1" : UC_MIPS_REG_K1, #=29
+                "gp" : UC_MIPS_REG_GP, #=30
+                "sp" : UC_MIPS_REG_SP, #=31
+                "fp" : UC_MIPS_REG_FP, #=32
+                "s8" : UC_MIPS_REG_S8, #=32
+                "ra" : UC_MIPS_REG_RA, #=33
+                "pc" : UC_MIPS_REG_PC, #= 1
+                #UC_MIPS_REG_HI0, #=45
+                #UC_MIPS_REG_HI1, #=46
+                #UC_MIPS_REG_HI2, #=47
+                #UC_MIPS_REG_HI3, #=48
+                #UC_MIPS_REG_LO0, #=45
+                #UC_MIPS_REG_LO1, #=46
+                #UC_MIPS_REG_LO2, #=47
+                #UC_MIPS_REG_LO3, #=48
+                }
+
+        elif self.architecture == uc.UC_ARCH_X86:
+            if self.mode == uc.UC_MODE_16:
+                raise Exception("Register map not implemented")
+            elif self.mode == uc.UC_MODE_32:
+                raise Exception("Register map not implemented")
+            elif self.mode == uc.UC_MODE_64:
+                reg_map = {
+                    "rax" : UC_X86_REG_RAX,
+                    "rbx" : UC_X86_REG_RBX,
+                    "rcx" : UC_X86_REG_RCX,
+                    "rdx" : UC_X86_REG_RDX,
+                    "rdi" : UC_X86_REG_RSI,
+                    "rsi" : UC_X86_REG_RDI,
+                    "rbp" : UC_X86_REG_RBP,
+                    "rsp" : UC_X86_REG_RSP,
+                    "rip" : UC_X86_REG_RIP,
+                    "r8"  : UC_X86_REG_R8,
+                    "r9"  : UC_X86_REG_R9,
+                    "r10" : UC_X86_REG_R10,
+                    "r11" : UC_X86_REG_R11,
+                    "r12" : UC_X86_REG_R12,
+                    "r13" : UC_X86_REG_R13,
+                    "r14" : UC_X86_REG_R14,
+                    "r15" : UC_X86_REG_R15,
+                }
+        else:
+            raise Exception("Register map not implemented")
+
+        return self.__uc.reg_read(reg_map.get(reg_name, 0x99))
 
     def __show_regs(self):
         """..."""
