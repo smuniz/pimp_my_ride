@@ -10,10 +10,11 @@ __email__       = "sebastianmuniz@gmail.com"
 __status__      = "Development"
 __description__ = "Pimped out multi-architecture CPU emulator"
 
-from sys import argv, exit
+from sys import argv, exit, stdout
 from argparse import ArgumentParser
 from traceback import print_exc
 import logging
+from time import sleep
 
 try:
     from pimp_my_ride import *
@@ -73,7 +74,11 @@ def get_gdb_server_settings(args):
     }
 
 def logo(a=1):
-    print "A" * 20
+    from pimped_art import pimp_my_ride_art 
+    for line in pimp_my_ride_art.split("\n"):
+        sleep(0.1)
+        stdout.write(line + "\n")
+        stdout.flush()
 
 def main():
 
@@ -81,7 +86,7 @@ def main():
 
     parser = ArgumentParser(description=__description__)
     parser.add_argument('--version', action='version', version=__version__)
-    parser.add_argument('--logo', type=logo, action='invoke')
+    parser.add_argument('--logo', type=logo, action='store')
     parser.add_argument("-p", "--port", dest = "port_number", type=int, default = 3333, help = "Port number that GDB server will listen.")
     #parser.add_argument("-c", "--cmd-port", dest = "cmd_port", default = 4444, help = "Command port number. pyOCD doesn't open command port, but it's required to be compatible with OpenOCD and Eclipse.")
     #parser.add_argument("-b", "--board", dest = "board_id", default = None, help="Connect to board by board id.  Use -l to list all connected boards.")
