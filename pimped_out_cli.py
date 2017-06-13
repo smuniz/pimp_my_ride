@@ -72,12 +72,16 @@ def get_gdb_server_settings(args):
         'log_level' : LOG_LEVELS.get(args.log_level),
     }
 
+def logo(a=1):
+    print "A" * 20
+
 def main():
 
     log_levels = LOG_LEVELS.keys()
 
     parser = ArgumentParser(description=__description__)
     parser.add_argument('--version', action='version', version=__version__)
+    parser.add_argument('--logo', type=logo, action='invoke')
     parser.add_argument("-p", "--port", dest = "port_number", type=int, default = 3333, help = "Port number that GDB server will listen.")
     #parser.add_argument("-c", "--cmd-port", dest = "cmd_port", default = 4444, help = "Command port number. pyOCD doesn't open command port, but it's required to be compatible with OpenOCD and Eclipse.")
     #parser.add_argument("-b", "--board", dest = "board_id", default = None, help="Connect to board by board id.  Use -l to list all connected boards.")
