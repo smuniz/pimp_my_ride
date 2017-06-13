@@ -197,6 +197,8 @@ class EmulatedTargetMips(Target):
 
         self.emu = emu
 
+        self.setState(None)
+
     #def setFlash(self, flash):
     #    pass
 
@@ -269,15 +271,19 @@ class EmulatedTargetMips(Target):
         return
 
     def halt(self):
+        """..."""
+        self.setState(TARGET_HALTED)
         self.emu.stop()
         return
 
     def step(self):
+        #self.setState(TARGET_RUNNING)
         return
 
     def resume(self, count=0):
         """..."""
         #try:
+        self.setState(TARGET_RUNNING)
         self.emu.start(count)
         #except PimpMyRideException, err:
         return
@@ -316,8 +322,13 @@ class EmulatedTargetMips(Target):
     def reset(self):
         return
 
+    def setState(self, state):
+        """..."""
+        self.state = state
+
     def getState(self):
-        return
+        """..."""
+        return self.state
 
     # GDB functions
     def getTargetXML(self):
@@ -325,6 +336,14 @@ class EmulatedTargetMips(Target):
 
     def getMemoryMapXML(self):
         return self.memoryMapXML
+
+    def breakpoint_callback(self, address):
+        """Callback function when breakpoints are hit."""
+        self.logger.error("I've hit a breakpoint at 0x%08X" % address)
+        self.setState(TARGET_HALTED)
+        #self.createRSPPacket("S05")
+        #self.createRSPPacket(self.getTResponse())
+        #raise Exception("matanga")
 
     def getRegisterContext(self):
         """Return hexadecimal dump of registers as expected by GDB."""
@@ -418,6 +437,7 @@ class EmulatedTargetMips(Target):
         return reg_vals
 
     def setRegisterContext(self, data):
+        raise Exception("Unimplemented setRegisterContext.")
         return
 
     def setRegister(self, reg, data):

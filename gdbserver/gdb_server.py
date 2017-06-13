@@ -25,6 +25,14 @@ from sys import stdout
 from protocol import Socket, WebSocket
 
 #from pyOCD.target.target import TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
+#TODO FIXME remove this duplicated definitions.
+TARGET_RUNNING = (1 << 0)
+TARGET_HALTED = (1 << 1)
+
+WATCHPOINT_READ = 1
+WATCHPOINT_WRITE = 2
+WATCHPOINT_READ_WRITE = 3
+
 from utility import hexStringToIntList, hexEncode, hexDecode
 
 
@@ -355,14 +363,18 @@ class GDBServer(threading.Thread):
         self.logger.error(self.soft_bkpt_as_hard)
 
         if data[1] == '0':
-            if not self.soft_bkpt_as_hard:   
-                # Empty response indicating no support for software breakpoints
-                return self.createRSPPacket("")
+            if data[0] == 'Z':
+                if not self.soft_bkpt_as_hard:   
+                    # Empty response indicating no support for software breakpoints
+                    return self.createRSPPacket("")
+                else:
+                    self.target.setBreakpoint(addr)
+                    #self.target.resume(0)
+                    return self.createRSPPacket("OK")
             else:
-                self.target.setBreakpoint(addr)
+                self.target.removeBreakpoint(addr)
                 return self.createRSPPacket("OK")
 
-        raise Exception("matanga")
         # handle hardware breakpoint Z1/z1
         # and software breakpoint Z0/z0
         if data[1] == '1' or (self.soft_bkpt_as_hard and data[1] == '0'):
@@ -393,12 +405,13 @@ class GDBServer(threading.Thread):
             self.target.removeWatchpoint(addr, size, watchpoint_type)
         return self.createRSPPacket("OK")
 
-    def resume(self):
+    def resume(self, count=0):
+        """Resume the execution of the debugged binary."""
         self.ack()
         self.abstract_socket.setBlocking(0)
 
-        self.target.resume()
-        self.logger.debug("target resumed")
+        self.target.resume(count)
+        self.logger.debug("Target resumed")
 
         val = ''
 
@@ -423,13 +436,15 @@ class GDBServer(threading.Thread):
 
             try:
                 if self.target.getState() == TARGET_HALTED:
-                    self.logger.debug("state halted")
+                    self.logger.debug("State halted")
                     val = self.target.getTResponse()
+                    val = "S05"
                     break
             except:
                 self.logger.debug('Target is unavailable temporary.')
 
         self.abstract_socket.setBlocking(1)
+        print "--------->", val
         return self.createRSPPacket(val), 0, 0
 
     def step(self):
@@ -514,8 +529,12 @@ class GDBServer(threading.Thread):
                 self.target.resume(1)
                 return self.createRSPPacket(self.target.getTResponse())
             elif ';c' in ops:
-                self.target.resume(0)
-                return self.createRSPPacket("OK")#self.target.getTResponse())
+                #self.ack()
+                [resp, ack, detach] = self.resume(0)
+                #return self.resume(0)
+                #return self.createRSPPacket("OK")#self.target.getTResponse())
+                self.abstract_socket.write(resp)
+                return None
 
         elif "MustReplyEmpty" in ops:
             return self.createRSPPacket("")
@@ -629,7 +648,7 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket(self.target.getRegisterContext())
 
     def setRegisters(self, data):
-        """Return the value of a specific register."""
+        """Store the value of a list of registers."""
         self.target.setRegisterContext(data)
         return self.createRSPPacket("OK")
 
@@ -836,5 +855,3 @@ class GDBServer(threading.Thread):
     def ack(self):
         if self.send_acks:
             self.abstract_socket.write("+")
-
-

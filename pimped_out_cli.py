@@ -119,7 +119,7 @@ def main():
     #
     start_address = 0x004007e8 #image.header.e_entry
 
-    ret_address = 0x0400810 #0x400502
+    ret_address = 0x0400814 #0x400502
 
     #
     # Read the code to emulate
@@ -166,6 +166,8 @@ def main():
 
         print "[+] Initializing GDB server..."
         gdb = GDBServer(board, gdb_server_settings)
+
+        emu.add_breakpoint_callback(gdb.target.breakpoint_callback)
 
         while gdb.isAlive():
             gdb.join(timeout=0.5)

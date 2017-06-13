@@ -22,6 +22,8 @@ from unicorn.mips_const import *
 
 import capstone as cs
 
+jump_types = set([cs.CS_GRP_CALL, cs.CS_GRP_JUMP, cs.CS_GRP_RET])
+
 import colorlog
 
 __all__ = ["PimpMyRide", "PimpMyRideException",
@@ -85,6 +87,7 @@ class PimpMyRide(object):
         self.compiler = compiler
 
         self.breakpoints = list()
+        self.breakpoints_callback = list()
 
         # Convert IDA architectures IDs to our own.
         if architecture == "ppc": # FIXME : pyelftools does not recognize
@@ -694,12 +697,26 @@ class PimpMyRide(object):
 
     def _show_disasm_inst(self, opcodes, addr):
         """..."""
+        disasm = list()
         try:
             for i in self.__cs.disasm(str(opcodes), addr):
+                #print dir(i)
+                #print "group ---> %r" % i.group(cs.CS_GRP_CALL)
+                #print "groups --->", set(i.groups) & jump_types
+                #raise Exception("EADas")
+                #print dir(i.target)
+                #if i.target not in (None, i.address + i.size):
+                #    self.logger.error("a branch")
+                #else:
+                #    self.logger.error("not a branch")
+                disasm.append([i.mnemonic, i.op_str, None])#i.groups])
                 self.logger.debug("    0x%x  %s\t%s\t%s" % (
                         i.address, " ".join(["%02X" % ord(x) for x in str(i.bytes)]), i.mnemonic, i.op_str))
         except cs.CsError, err:
-            raise PimpMyRideException(e)
+            self.logger.error(format_exc())
+            raise PimpMyRideException(err)
+
+        return disasm
 
     def add_code_hook(self, callback_fn):
         """Store user-specified callback function for the instruction tracing."""
@@ -721,10 +738,17 @@ class PimpMyRide(object):
             opcodes = _uc.mem_read(address, size)
 
             self.logger.debug("")
-            self._show_disasm_inst(opcodes, address)
+            disasm = self._show_disasm_inst(opcodes, address)
             self.logger.debug("")
 
             new_pc = self.read_register("pc")
+
+            #if disasm[2] in jump_types:
+            #if disasm[0] == "jal":
+            #    self.logger.error("=" * 80)
+            if str(disasm[0][0] == u'jal'):
+                self.logger.error("============> %r" % str(disasm[0][0] == u'jal'))
+
             self.logger.warning("New address 0x%08X" % new_pc)
             self.start_address = new_pc
             self.logger.debug("_" * 80)
@@ -734,7 +758,12 @@ class PimpMyRide(object):
             # Check breakpoint
             if address in self.breakpoints:
                 self.logger.debug("_" * 80)
+                self.logger.debug("Stopping execution...")
+                self.__uc.emu_stop()
+
                 self.logger.info("Breakpoint hit at 0x%08X" % address)
+                for cb in self.breakpoints_callback:
+                    cb(address)
                 self.logger.debug("_" * 80)
 
             # TODO : call user-defined function now?
@@ -752,12 +781,18 @@ class PimpMyRide(object):
         except uc.UcError as err:
             self.logger.error("Error (MEMORY hook): %s" % err)
 
+    def add_breakpoint_callback(self, callback):
+        """Add a callback function for every breakpoint hit."""
+        self.breakpoints_callback.append(callback)
+        return
 
     def set_breakpoint(self, addr):
+        """Store a list of the address to check for breakpoints."""
         self.breakpoints.append(addr)
         return
 
     def remove_breakpoint(self, addr):
+        """Remove the specified address from the breakpoint addresses list."""
         if addr in self.breakpoints:
             self.breakpoints.remove(addr)
         return
