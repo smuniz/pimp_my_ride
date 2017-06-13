@@ -683,13 +683,17 @@ class PimpMyRide(object):
             starts.
         """
         for reg, value in self.__regs.iteritems():
-            reg_idx = self._reg_map(reg)
-            self.logger.debug("Commiting register %s (%d) value 0x%08X" % (reg, reg_idx, value))
-            self.__uc.reg_write(reg_idx,  value)
+            self.write_register(reg, value)
+
+    def init_register(self, register, value):
+        """Store the initial value of the specified register."""
+        self.__regs[register] = value
 
     def write_register(self, register, value):
         """Write the specified value into the specified register."""
-        self.__regs[register] = value
+        reg_idx = self._reg_map(register)
+        #self.logger.debug("New register value %s (%d) = 0x%08X" % (register, reg_idx, value))
+        self.__uc.reg_write(reg_idx, value)
 
     def result(self):
         """Return the emulation results (if any)."""

@@ -155,8 +155,8 @@ def main():
 
         emu.start_address = start_address
         emu.return_address = ret_address
-        emu.write_register("pc", start_address)
-        emu.write_register("sp", stack * stack_size)
+        emu.init_register("pc", start_address)
+        emu.init_register("sp", stack * stack_size)
 
         # Set tracing all instructions with internal callback.
         emu.trace_instructions()

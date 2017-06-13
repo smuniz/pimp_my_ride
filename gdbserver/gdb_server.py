@@ -328,7 +328,8 @@ class GDBServer(threading.Thread):
             return self.createRSPPacket(""), 1, 0
 
     def enableExtendedMode(self):
-        self.logger.info("Enable Extended mode")
+        """The GDB stub is requested to enable extended mode."""
+        self.logger.warning("Enable Extended mode request not implemented.")
 
         self.is_extended_mode_supported = False # TODO add support for this!
 
@@ -339,11 +340,13 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket(resp)
 
     def detach(self, data):
+        """Detach from the target."""
         self.logger.info("Client detached")
         resp = "OK"
         return self.createRSPPacket(resp)
 
     def kill(self):
+        """Kill the running process."""
         self.logger.info("GDB session killed")
         # Keep target halted and leave vector catches if in persistent mode.
         if not self.persist:
@@ -354,6 +357,7 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket("")
 
     def breakpoint(self, data):
+        """Set or clear a breakpoint."""
         # handle breakpoint/watchpoint commands
         split = data.split('#')[0].split(',')
         addr = int(split[1], 16)

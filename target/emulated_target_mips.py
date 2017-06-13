@@ -67,11 +67,11 @@ CORE_REGISTER = {
                 'fp' : 30,
                 'ra' : 31,
                 'status' : 32,
-                'lo' : 32,
-                'hi' : 32,
-                'badvaddr' : 32,
-                'cause' : 32,
-                'pc' : 32,
+                'lo' : 33,
+                'hi' : 34,
+                'badvaddr' : 35,
+                'cause' : 36,
+                'pc' : 37,
 
                  #'r7': 7,
                  #'r8': 8,
@@ -437,7 +437,14 @@ class EmulatedTargetMips(Target):
         return reg_vals
 
     def setRegisterContext(self, data):
-        raise Exception("Unimplemented setRegisterContext.")
+        """Store the specified values for the appropriate registers."""
+        #print len(data)/8
+        #regs_values = struct.unpack(">" + "I" * (len(data)/8), data)
+        #for i, value in enumerate(regs_values):
+        for i, value in enumerate(xrange(0, len(data)-3, 8)):
+            value = int(data[i*8 : (i*8) + 8], 16)
+            #self.logger.error("Idx 0x%X : 0x%X" % (i, value))
+            self.emu.write_register(self.regs_general[i].name, value)
         return
 
     def setRegister(self, reg, data):
