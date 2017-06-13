@@ -682,8 +682,10 @@ class GDBServer(threading.Thread):
 
         elif query[0] == 'fThreadInfo':
             return self.createRSPPacket("m26a")
+            #return self.createRSPPacket("m-1")
 
         elif query[0] == 'sThreadInfo':
+            # Indicate there is no more information.
             return self.createRSPPacket("l")
 
         #elif query[0] == 'Xfer':
@@ -707,6 +709,11 @@ class GDBServer(threading.Thread):
 
         elif query[0].find('Attached') != -1:
             return self.createRSPPacket("1")
+
+        elif query[0][0] == "L":    # According to the docs this message is
+                                    # deprecated.
+            self.logger.warning("Client issued a deprecated qL message.")
+            return self.createRSPPacket("")
 
         elif query[0].find('TStatus') != -1:
             return self.createRSPPacket("")

@@ -57,6 +57,9 @@ class PimpMyRide(object):
     def __init__(self, architecture, bits, is_little_endian, stack, stack_size,
             log_level=LOG_LEVELS['info'], compiler=COMPILE_GCC):
 
+        self._do_stop = False
+        self.saved_lr_address = None
+
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 
         #logging.basicConfig(level=log_level)
@@ -240,7 +243,7 @@ class PimpMyRide(object):
             raise PimpMyRideException("Mode not specified")
 
         if self.start_address is None:
-            raise PimpMyRideException("Return address not specified")
+            raise PimpMyRideException("Start address not specified")
 
         if self.return_address is None:
             raise PimpMyRideException("Return address not specified")
@@ -572,6 +575,14 @@ class PimpMyRide(object):
                     t5 = self.__uc.reg_read(UC_MIPS_REG_T5)
                     t6 = self.__uc.reg_read(UC_MIPS_REG_T6)
                     t7 = self.__uc.reg_read(UC_MIPS_REG_T7)
+                    s0 = self.__uc.reg_read(UC_MIPS_REG_S0)
+                    s1 = self.__uc.reg_read(UC_MIPS_REG_S1)
+                    s2 = self.__uc.reg_read(UC_MIPS_REG_S2)
+                    s3 = self.__uc.reg_read(UC_MIPS_REG_S3)
+                    s4 = self.__uc.reg_read(UC_MIPS_REG_S4)
+                    s5 = self.__uc.reg_read(UC_MIPS_REG_S5)
+                    s6 = self.__uc.reg_read(UC_MIPS_REG_S6)
+                    s7 = self.__uc.reg_read(UC_MIPS_REG_S7)
                     gp = self.__uc.reg_read(UC_MIPS_REG_GP)
                     sp = self.__uc.reg_read(UC_MIPS_REG_SP)
                     pc = self.__uc.reg_read(UC_MIPS_REG_PC)
@@ -582,6 +593,8 @@ class PimpMyRide(object):
                     self.logger.debug("    a0 = 0x%08x a1 = 0x%08x a2 = 0x%08x a3 = 0x%08x" % (a0, a1, a2, a3))
                     self.logger.debug("    t0 = 0x%08x t1 = 0x%08x t2 = 0x%08x t3 = 0x%08x" % (t0, t1, t2, t3))
                     self.logger.debug("    t4 = 0x%08x t5 = 0x%08x t6 = 0x%08x t7 = 0x%08x" % (t4, t5, t6, t7))
+                    self.logger.debug("    s0 = 0x%08x s1 = 0x%08x s2 = 0x%08x s3 = 0x%08x" % (s0, s1, s2, s3))
+                    self.logger.debug("    s4 = 0x%08x s5 = 0x%08x s6 = 0x%08x s7 = 0x%08x" % (s4, s5, s6, s7))
                     self.logger.debug("    gp = 0x%08x sp = 0x%08x pc = 0x%08x ra = 0x%08x" % (gp, sp, pc, ra))
                     self.logger.debug("    BadVAddr = 0x%08X" % (bv))
 
@@ -737,6 +750,12 @@ class PimpMyRide(object):
         """Built-in callback for instructions tracing."""
         self.logger.debug("Tracing instruction at 0x%x, instruction size = %u" %(address, size))
         try:
+            if self._do_stop and address != self.start_address:
+                self.logger.error("STOPPPPPPPPPPPPPPPPPPPPPPPPPP")
+                self.logger.error("STOPPPPPPPPPPPPPPPPPPPPPPPPPP")
+                self.logger.error("STOPPPPPPPPPPPPPPPPPPPPPPPPPP")
+                #self.__uc.emu_stop()
+
             self.__show_regs()
 
             opcodes = _uc.mem_read(address, size)
@@ -747,11 +766,18 @@ class PimpMyRide(object):
 
             new_pc = self.read_register("pc")
 
+            if self.saved_lr_address:
+                new_pc = self.saved_lr_address
+                self.saved_lr_address = None
+                new_ra = new_pc+4
+                self.logger.error("new pc (jal) = 0x%08X" % new_pc)
+
             #if disasm[2] in jump_types:
-            #if disasm[0] == "jal":
-            #    self.logger.error("=" * 80)
-            if str(disasm[0][0] == u'jal'):
-                self.logger.error("============> %r" % str(disasm[0][0] == u'jal'))
+            if str(disasm[0][0]) == 'jal':
+                self.logger.error("============> %r" % (str(disasm[0][0]) == 'jal'))
+                #new_pc = int(str(disasm[0][1]), 16)
+                self.saved_lr_address = int(str(disasm[0][1]), 16)
+                self.logger.error("saved LR (jal) = 0x%08X" % self.saved_lr_address)
 
             self.logger.warning("New address 0x%08X" % new_pc)
             self.start_address = new_pc

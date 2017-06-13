@@ -284,7 +284,13 @@ class EmulatedTargetMips(Target):
         """..."""
         #try:
         self.setState(TARGET_RUNNING)
+        if count == 1:
+            self.emu._do_stop = True
+        else:
+            self.emu._do_stop = False
+
         self.emu.start(count)
+        #self.emu.start(0)
         #except PimpMyRideException, err:
         return
 
