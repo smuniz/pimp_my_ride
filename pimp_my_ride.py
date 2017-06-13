@@ -57,9 +57,6 @@ class PimpMyRide(object):
     def __init__(self, architecture, bits, is_little_endian, stack, stack_size,
             log_level=LOG_LEVELS['info'], compiler=COMPILE_GCC):
 
-        self._do_stop = False
-        self.saved_lr_address = None
-
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 
         #logging.basicConfig(level=log_level)
@@ -750,12 +747,6 @@ class PimpMyRide(object):
         """Built-in callback for instructions tracing."""
         self.logger.debug("Tracing instruction at 0x%x, instruction size = %u" %(address, size))
         try:
-            if self._do_stop and address != self.start_address:
-                self.logger.error("STOPPPPPPPPPPPPPPPPPPPPPPPPPP")
-                self.logger.error("STOPPPPPPPPPPPPPPPPPPPPPPPPPP")
-                self.logger.error("STOPPPPPPPPPPPPPPPPPPPPPPPPPP")
-                #self.__uc.emu_stop()
-
             self.__show_regs()
 
             opcodes = _uc.mem_read(address, size)
@@ -766,24 +757,18 @@ class PimpMyRide(object):
 
             new_pc = self.read_register("pc")
 
-            if self.saved_lr_address:
-                new_pc = self.saved_lr_address
-                self.saved_lr_address = None
-                new_ra = new_pc+4
-                self.logger.error("new pc (jal) = 0x%08X" % new_pc)
-
             #if disasm[2] in jump_types:
             if str(disasm[0][0]) == 'jal':
                 self.logger.error("============> %r" % (str(disasm[0][0]) == 'jal'))
                 #new_pc = int(str(disasm[0][1]), 16)
-                self.saved_lr_address = int(str(disasm[0][1]), 16)
-                self.logger.error("saved LR (jal) = 0x%08X" % self.saved_lr_address)
+                #new_pc = int(str(disasm[0][1]), 16)
+                self.logger.error("new pc (jal) = 0x%08X" % new_pc)
+
+            #self.__uc.reg_write(UC_MIPS_REG_PC, new_pc)
 
             self.logger.warning("New address 0x%08X" % new_pc)
             self.start_address = new_pc
             self.logger.debug("_" * 80)
-
-            #self.__uc.reg_write(UC_MIPS_REG_PC,  address)
 
             # Check breakpoint
             if address in self.breakpoints:
