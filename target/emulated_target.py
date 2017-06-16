@@ -139,7 +139,7 @@ class EmulatedTargetX86_64(Target):
 
     regs_general = [
         #            Name       bitsize     type            group
-        RegisterInfo('rax',  32,         'int',          'general'),
+        RegisterInfo('rax',   32,         'int',          'general'),
         RegisterInfo('rbx',   32,         'int',          'general'),
         RegisterInfo('rcx',   32,         'int',          'general'),
         RegisterInfo('rdx',   32,         'int',          'general'),
@@ -178,12 +178,14 @@ class EmulatedTargetX86_64(Target):
 
         self.emu = emu
 
+        self.setState(None)
+
     #def setFlash(self, flash):
     #    pass
 
     def init(self, initial_setup=True, bus_accessible=True):
         """Emulated target initial setup."""
-        self.emu.start()
+        self.emu.init()
 
 #        if initial_setup:
 #            self.idcode = self.readIDCode()
@@ -250,12 +252,17 @@ class EmulatedTargetX86_64(Target):
         return
 
     def halt(self):
+        self.setState(TARGET_HALTED)
+        self.emu.stop()
         return
 
     def step(self):
         return
 
     def resume(self):
+        self.setState(TARGET_RUNNING)
+
+        self.emu.start(count)
         return
 
     def writeMemory(self, addr, value, transfer_size = 32):
@@ -293,6 +300,10 @@ class EmulatedTargetX86_64(Target):
     def reset(self):
         return
 
+    def setState(self, state):
+        """..."""
+        self.state = state
+
     def getState(self):
         return
 
@@ -303,26 +314,34 @@ class EmulatedTargetX86_64(Target):
     def getMemoryMapXML(self):
         return self.memoryMapXML
 
+    def breakpoint_callback(self, address):
+        """Callback function when breakpoints are hit."""
+        self.logger.error("I've hit a breakpoint at 0x%08X" % address)
+        self.setState(TARGET_HALTED)
+        #self.createRSPPacket("S05")
+        #self.createRSPPacket(self.getTResponse())
+        #raise Exception("matanga")
+
     def getRegisterContext(self):
         """Return hexadecimal dump of registers as expected by GDB."""
 
         self.logger.debug("GDB getting register context")
         resp = ''
         reg_num_list = map(lambda reg:reg.reg_num, self.register_list)
-        #print "\n*************>>>", reg_num_list
+        print "\n*************>>>", reg_num_list
 
-        vals = self.readCoreRegistersRaw(reg_num_list)
+        #vals = self.readCoreRegistersRaw(reg_num_list)
         #print("Vals: %s" % vals)
         #for reg, regValue in zip(self.register_list, vals): # XXX original
-        for reg in self.register_list:
+        for idx, reg in enumerate(self.register_list):
             #regName = self.register_list[reg].name
             regValue = self.emu.read_register(reg.name)
 
             resp += struct.pack("<Q", regValue).encode("hex") # conversion.intToHex8(regValue) # FIXME
 
-            #self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
+            self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
 
-        return resp
+        return resp + "A" * 80
 
     def registerNameToIndex(self, reg):
         """
@@ -412,7 +431,7 @@ class EmulatedTargetX86_64(Target):
             The signal encountered.
             The current value of the important registers (sp, lr, pc).
         """
-        #return "T05"
+        return "T05" # TODO FIXME
         resp = []
         resp.append("T0506:0 *,")
 

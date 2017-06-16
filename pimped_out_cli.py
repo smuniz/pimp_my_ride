@@ -126,9 +126,11 @@ def main():
     #
     # Obtain the memory ranges where we're going to operate.
     #
-    start_address = 0x004007e8 #image.header.e_entry
+    #start_address = 0x004007e8 #image.header.e_entry # MIPS
+    start_address = 0x4004F4 # X86-64
 
-    ret_address = 0x0400814 #0x400502
+    #ret_address = 0x0400814 #0x400502 # MIPS
+    ret_address = 0x400503 # X86-64
 
     #
     # Read the code to emulate
@@ -164,14 +166,16 @@ def main():
 
         emu.start_address = start_address
         emu.return_address = ret_address
-        emu.init_register("pc", start_address)
-        emu.init_register("sp", stack * stack_size)
+        emu.init_register("rip", start_address)
+        emu.init_register("rsp", stack * stack_size)
+        #emu.init_register("pc", start_address) # MIPS
+        #emu.init_register("sp", stack * stack_size)
 
         # Set tracing all instructions with internal callback.
         emu.trace_instructions()
 
-        #board = Board(EmulatedTargetX86_64(emu))
-        board = Board(EmulatedTargetMips(emu))
+        board = Board(EmulatedTargetX86_64(emu))
+        #board = Board(EmulatedTargetMips(emu))
 
         print "[+] Initializing GDB server..."
         gdb = GDBServer(board, gdb_server_settings)

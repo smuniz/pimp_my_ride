@@ -141,7 +141,7 @@ class PimpMyRide(object):
                 "Unsupported architecture %s" % architecture)
 
         self.logger.debug("Architecture: %s %dbits" % (
-                architecture.upper(), bits))
+                architecture, bits))
 
         self.architecture = cur_arch
         self.mode = cur_mode
@@ -253,6 +253,7 @@ class PimpMyRide(object):
 
         # Create a new Unicorn instance.
         self.__uc = uc.Uc(self.architecture, self.mode)
+        print self.__uc
 
         # Create a new Capstone instance.
         self.__cs = cs.Cs(self._cs_arch, self._cs_mode) 
