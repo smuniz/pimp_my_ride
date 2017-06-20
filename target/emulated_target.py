@@ -259,7 +259,7 @@ class EmulatedTargetX86_64(Target):
     def step(self):
         return
 
-    def resume(self):
+    def resume(self, count=0):
         self.setState(TARGET_RUNNING)
 
         self.emu.start(count)
@@ -341,7 +341,7 @@ class EmulatedTargetX86_64(Target):
 
             self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
 
-        return resp + "A" * 80
+        return resp
 
     def registerNameToIndex(self, reg):
         """

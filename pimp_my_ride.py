@@ -756,7 +756,18 @@ class PimpMyRide(object):
             disasm = self._show_disasm_inst(opcodes, address)
             self.logger.debug("")
 
-            new_pc = self.read_register("pc")
+            if self.architecture == uc.UC_ARCH_MIPS:
+                new_pc = self.read_register("pc")
+
+            elif self.architecture == uc.UC_ARCH_X86:
+                if self.mode == uc.UC_MODE_16:
+                    raise Exception("get PC map not implemented")
+                elif self.mode == uc.UC_MODE_32:
+                    raise Exception("get PC not implemented")
+                elif self.mode == uc.UC_MODE_64:
+                    new_pc = self.read_register("rip")
+            else:
+                raise Exception("get PC not implemented for current architecture")
 
             #if disasm[2] in jump_types:
             if str(disasm[0][0]) == 'jal':

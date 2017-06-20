@@ -161,7 +161,7 @@ def main():
                 log_level=LOG_LEVELS.get(args.log_level), stack=stack,
                 stack_size=stack_size)
 
-        emu.add_memory_area(addr, len(code))
+        emu.add_memory_area(addr, len(code) + 0x100)
         emu.add_memory_content(addr, code)
 
         emu.start_address = start_address
