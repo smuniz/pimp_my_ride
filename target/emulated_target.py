@@ -416,7 +416,8 @@ class EmulatedTargetX86_64(Target):
     def setRegisterContext(self, data):
         """Store the specified values for the appropriate registers."""
         data = hexDecode(data)
-        regs_values = struct.unpack("<" + "I" * (len(data)/4), data)
+        #regs_values = struct.unpack("<" + "I" * (len(data)/4), data)
+        regs_values = struct.unpack("<" + "Q" * (len(data)/8), data)
         for i, value in enumerate(regs_values):
             #self.logger.error("%s (idx 0x%X) : 0x%X" % (
             #    self.regs_general[i].name, i, value))
@@ -442,7 +443,7 @@ class EmulatedTargetX86_64(Target):
             The signal encountered.
             The current value of the important registers (sp, lr, pc).
         """
-        return "T05" # TODO FIXME
+        #return "T05" # TODO FIXME
         resp = []
         resp.append("T0506:0 *,")
 
