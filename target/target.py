@@ -24,10 +24,28 @@ WATCHPOINT_READ_WRITE = 3
 
 class Target(object):
 
-    def __init__(self, transport):
+    def __init__(self, emu, transport=None):
         self.transport = transport
         self.flash = None
         self.part_number = ""
+
+        self.emu = emu
+
+        self.endian = emu.pack_endian
+        self.pack_format = emu.pack_format
+        self.step = emu.step
+
+        self.state = None
+
+    @property
+    def state(self):
+        """Return the current state of the application."""
+        return self._state
+
+    @state.setter
+    def state(self, state):
+        """Store the current state of the application."""
+        self._state = state
 
     def setFlash(self, flash):
         self.flash = flash

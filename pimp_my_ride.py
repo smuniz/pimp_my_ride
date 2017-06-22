@@ -110,9 +110,15 @@ class PimpMyRide(object):
             cur_arch = uc.UC_ARCH_ARM
             cur_mode = uc.UC_MODE_ARM
 
+            cs_arch = cs.CS_ARCH_ARM
+            cs_mode = cs.CS_MODE_ARM
+
         elif architecture == "AArch64":
             cur_arch = uc.UC_ARCH_ARM64
             cur_mode = uc.UC_MODE_ARM
+
+            cs_arch = cs.CS_ARCH_ARM64
+            cs_mode = cs.CS_MODE_ARM
 
         elif architecture == "x86":
             cur_arch = uc.UC_ARCH_X86
@@ -150,6 +156,9 @@ class PimpMyRide(object):
 
         self.__regs = dict()
         self.__hooks = dict()
+
+        # Setup the register configuration.
+        self._setup_registers()
 
     @property
     def code(self):
@@ -254,9 +263,6 @@ class PimpMyRide(object):
 
         # Create a new Capstone instance.
         self.__cs = cs.Cs(self._cs_arch, self._cs_mode) 
-
-        # Setup the register configuration.
-        self._setup_registers()
 
         #
         # Initialize the emulator memory.
@@ -521,6 +527,47 @@ class PimpMyRide(object):
                 #UC_MIPS_REG_LO1, #=46
                 #UC_MIPS_REG_LO2, #=47
                 #UC_MIPS_REG_LO3, #=48
+                }
+
+        elif self.architecture == uc.UC_ARCH_ARM64:
+            reg_map = {
+                "r0"    : UC_ARM64_REG_X0, #= 199
+                "r1"    : UC_ARM64_REG_X1, #= 200
+                "r2"    : UC_ARM64_REG_X2, #= 201
+                "r3"    : UC_ARM64_REG_X3, #= 202
+                "r4"    : UC_ARM64_REG_X4, #= 203
+                "r5"    : UC_ARM64_REG_X5, #= 204
+                "r6"    : UC_ARM64_REG_X6, #= 205
+                "r7"    : UC_ARM64_REG_X7, #= 206
+                "r8"    : UC_ARM64_REG_X8, #= 207
+                "r9"    : UC_ARM64_REG_X9, #= 208
+                "r10"   : UC_ARM64_REG_X10, #= 209
+                "r11"   : UC_ARM64_REG_X11, #= 210
+                "r12"   : UC_ARM64_REG_X12, #= 211
+                "r13"   : UC_ARM64_REG_X13, #= 212
+                "r14"   : UC_ARM64_REG_X14, #= 213
+                "r15"   : UC_ARM64_REG_X15, #= 214
+                "r16"   : UC_ARM64_REG_X16, #= 215
+                "r17"   : UC_ARM64_REG_X17, #= 216
+                "r18"   : UC_ARM64_REG_X18, #= 217
+                "r19"   : UC_ARM64_REG_X19, #= 218
+                "r20"   : UC_ARM64_REG_X20, #= 219
+                "r21"   : UC_ARM64_REG_X21, #= 220
+                "r22"   : UC_ARM64_REG_X22, #= 221
+                "r23"   : UC_ARM64_REG_X23, #= 222
+                "r24"   : UC_ARM64_REG_X24, #= 223
+                "r25"   : UC_ARM64_REG_X25, #= 224
+                "r26"   : UC_ARM64_REG_X26, #= 225
+                "r27"   : UC_ARM64_REG_X27, #= 226
+                "r28"   : UC_ARM64_REG_X28, #= 227
+
+                "r29"   : UC_ARM64_REG_X29, #= 1
+                "r30"   : UC_ARM64_REG_X30, #= 2
+
+                "r31"    : UC_ARM64_REG_SP, #= 4
+                #"xzr"   : UC_ARM64_REG_XZR, #= 7
+
+                "pc"    : UC_ARM64_REG_PC, #= 260
                 }
 
         elif self.architecture == uc.UC_ARCH_X86:

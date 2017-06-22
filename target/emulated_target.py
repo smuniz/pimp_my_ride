@@ -165,7 +165,7 @@ class EmulatedTargetX86_64(Target):
         ]
 
     def __init__(self, emu, log_level=logging.DEBUG):
-        super(EmulatedTargetX86_64, self).__init__(None)
+        super(EmulatedTargetX86_64, self).__init__(emu=emu)
 
         # setup logging
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
@@ -177,17 +177,6 @@ class EmulatedTargetX86_64(Target):
         self.logger = colorlog.getLogger(type(self).__name__)
         self.logger.setLevel(log_level)
         self.logger.addHandler(handler)
-
-        self.emu = emu
-
-        self.endian = emu.endian
-        self.pack_format = emu.pack_format
-        self.step = emu.step
-
-        self.state = None
-
-    #def setFlash(self, flash):
-    #    pass
 
     def init(self, initial_setup=True, bus_accessible=True):
         """Emulated target initial setup."""
@@ -309,16 +298,6 @@ class EmulatedTargetX86_64(Target):
 
     def reset(self):
         return
-
-    @property
-    def state(self):
-        """Return the current state of the application."""
-        return self._state
-
-    @state.setter
-    def state(self, state):
-        """Store the current state of the application."""
-        self._state = state
 
     # GDB functions
     def getTargetXML(self):
