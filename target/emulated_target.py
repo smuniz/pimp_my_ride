@@ -180,7 +180,7 @@ class EmulatedTargetX86_64(Target):
 
         self.emu = emu
 
-        self.setState(None)
+        self.state = None
 
     #def setFlash(self, flash):
     #    pass
@@ -254,7 +254,7 @@ class EmulatedTargetX86_64(Target):
         return
 
     def halt(self):
-        self.setState(TARGET_HALTED)
+        self.state = TARGET_HALTED
         self.emu.stop()
         return
 
@@ -262,7 +262,7 @@ class EmulatedTargetX86_64(Target):
         return
 
     def resume(self, count=0):
-        self.setState(TARGET_RUNNING)
+        self.state = TARGET_RUNNING
 
         self.emu.start(count)
         return
@@ -287,10 +287,14 @@ class EmulatedTargetX86_64(Target):
     def writeCoreRegister(self, id):
         return
 
-    def setBreakpoint(self, addr):
+    def setBreakpoint(self, address):
+        """Set a breakpoint at the specified address."""
+        self.emu.set_breakpoint(address)
         return
 
-    def removeBreakpoint(self, addr):
+    def removeBreakpoint(self, address):
+        """Remove the breakpoint at the specified address."""
+        self.emu.remove_breakpoint(address)
         return
 
     def setWatchpoint(addr, size, type):
@@ -302,12 +306,15 @@ class EmulatedTargetX86_64(Target):
     def reset(self):
         return
 
-    def setState(self, state):
-        """..."""
-        self.state = state
+    @property
+    def state(self):
+        """Return the current state of the application."""
+        return self._state
 
-    def getState(self):
-        return
+    @state.setter
+    def state(self, state):
+        """Store the current state of the application."""
+        self._state = state
 
     # GDB functions
     def getTargetXML(self):
@@ -318,8 +325,8 @@ class EmulatedTargetX86_64(Target):
 
     def breakpoint_callback(self, address):
         """Callback function when breakpoints are hit."""
-        self.logger.error("I've hit a breakpoint at 0x%08X" % address)
-        self.setState(TARGET_HALTED)
+        self.logger.warning("I've hit a breakpoint at 0x%08X" % address)
+        self.state = TARGET_HALTED
         #self.createRSPPacket("S05")
         #self.createRSPPacket(self.getTResponse())
         #raise Exception("matanga")
@@ -419,8 +426,6 @@ class EmulatedTargetX86_64(Target):
         #regs_values = struct.unpack("<" + "I" * (len(data)/4), data)
         regs_values = struct.unpack("<" + "Q" * (len(data)/8), data)
         for i, value in enumerate(regs_values):
-            #self.logger.error("%s (idx 0x%X) : 0x%X" % (
-            #    self.regs_general[i].name, i, value))
             self.emu.write_register(self.regs_general[i].name, value)
         return
 

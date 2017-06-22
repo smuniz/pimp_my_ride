@@ -361,10 +361,10 @@ class GDBServer(threading.Thread):
         # handle breakpoint/watchpoint commands
         split = data.split('#')[0].split(',')
         addr = int(split[1], 16)
-        self.logger.debug("GDB breakpoint %d @ %x" % (int(data[1]), addr))
+        self.logger.info("GDB breakpoint %d @ %x" % (int(data[1]), addr))
 
-        self.logger.error(data)
-        self.logger.error(self.soft_bkpt_as_hard)
+        #self.logger.error(data)
+        #self.logger.error(self.soft_bkpt_as_hard)
 
         if data[1] == '0':
             if data[0] == 'Z':
@@ -414,8 +414,8 @@ class GDBServer(threading.Thread):
         self.ack()
         self.abstract_socket.setBlocking(0)
 
+        self.logger.debug("Resuming target (count=%d)", count)
         self.target.resume(count)
-        self.logger.debug("Target resumed")
 
         val = ''
 
@@ -433,19 +433,19 @@ class GDBServer(threading.Thread):
                 if (data[0] == '\x03'):
                     self.target.halt()
                     val = self.target.getTResponse(True)
-                    self.logger.debug("receive CTRL-C")
+                    self.logger.debug("Received CTRL-C")
                     break
             except:
                 pass
 
             try:
-                if self.target.getState() == TARGET_HALTED:
-                    self.logger.debug("State halted")
+                if self.target.state == TARGET_HALTED:
+                    self.logger.error("State halted")
                     val = self.target.getTResponse()
                     val = "S05"
                     break
             except:
-                self.logger.debug('Target is unavailable temporary.')
+                self.logger.debug('Target is temporary unavailable.')
 
         self.abstract_socket.setBlocking(1)
         print "--------->", val

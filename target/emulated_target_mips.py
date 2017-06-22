@@ -197,7 +197,7 @@ class EmulatedTargetMips(Target):
 
         self.emu = emu
 
-        self.setState(None)
+        self.state = None
 
     #def setFlash(self, flash):
     #    pass
@@ -272,18 +272,18 @@ class EmulatedTargetMips(Target):
 
     def halt(self):
         """..."""
-        self.setState(TARGET_HALTED)
+        self.state = TARGET_HALTED
         self.emu.stop()
         return
 
     def step(self):
-        #self.setState(TARGET_RUNNING)
+        #self.state = TARGET_RUNNING)
         return
 
     def resume(self, count=0):
         """..."""
         #try:
-        self.setState(TARGET_RUNNING)
+        self.state = TARGET_RUNNING
 
         self.emu.start(count)
         #self.emu.start(0)
@@ -307,12 +307,14 @@ class EmulatedTargetMips(Target):
     def writeCoreRegister(self, id):
         return
 
-    def setBreakpoint(self, addr):
-        self.emu.set_breakpoint(addr)
+    def setBreakpoint(self, address):
+        """Set a breakpoint at the specified address."""
+        self.emu.set_breakpoint(address)
         return
 
-    def removeBreakpoint(self, addr):
-        self.emu.remove_breakpoint(addr)
+    def removeBreakpoint(self, address):
+        """Remove the breakpoint at the specified address."""
+        self.emu.remove_breakpoint(address)
         return
 
     def setWatchpoint(addr, size, type):
@@ -324,13 +326,15 @@ class EmulatedTargetMips(Target):
     def reset(self):
         return
 
-    def setState(self, state):
-        """..."""
-        self.state = state
+    @property
+    def state(self):
+        """Return the current state of the application."""
+        return self._state
 
-    def getState(self):
-        """..."""
-        return self.state
+    @state.setter
+    def state(self, state):
+        """Store the current state of the application."""
+        self._state = state
 
     # GDB functions
     def getTargetXML(self):
@@ -342,7 +346,7 @@ class EmulatedTargetMips(Target):
     def breakpoint_callback(self, address):
         """Callback function when breakpoints are hit."""
         self.logger.error("I've hit a breakpoint at 0x%08X" % address)
-        self.setState(TARGET_HALTED)
+        self.state = TARGET_HALTED
         #self.createRSPPacket("S05")
         #self.createRSPPacket(self.getTResponse())
         #raise Exception("matanga")

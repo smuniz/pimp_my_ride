@@ -127,7 +127,7 @@ def main():
     start_address = 0x4004F4 # X86-64
 
     #ret_address = 0x0400814 #0x400502 # MIPS
-    ret_address = 0x400503 # X86-64
+    ret_address = 0x400504 # X86-64
 
     #
     # Read the code to emulate
