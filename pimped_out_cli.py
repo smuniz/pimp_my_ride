@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__       = "Sebastian 'topo' Muniz"
-__copyright__   = "Copyright 2016"
+__copyright__   = "Copyright 2017"
 __credits__     = []
 __license__     = "GPL"
 __version__     = "0.1"
 __maintainer__  = "Sebastian Muniz"
 __email__       = "sebastianmuniz@gmail.com"
-__status__      = "Development"
 __description__ = "Pimped out multi-architecture CPU emulator"
 
 from sys import argv, exit, stdout
@@ -44,8 +43,6 @@ try:
 except ImportError, err:
     print "Missing 'pyelftools' module."
     exit(1)
-
-__all__ = ["Pimped"]
 
 def autodetect_architecture(image):
     """Detect the current architecture in use by the disassembler being

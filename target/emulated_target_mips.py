@@ -443,7 +443,7 @@ class EmulatedTargetMips(Target):
         #print len(data)/8
         #regs_values = struct.unpack(">" + "I" * (len(data)/8), data)
         #for i, value in enumerate(regs_values):
-        for i, value in enumerate(xrange(0, len(data)-3, 8)):
+        for i, value in enumerate(xrange(0, len(data), 8)):
             value = int(data[i*8 : (i*8) + 8], 16)
             #self.logger.error("Idx 0x%X : 0x%X" % (i, value))
             self.emu.write_register(self.regs_general[i].name, value)

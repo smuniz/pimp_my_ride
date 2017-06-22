@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__       = "Sebastian 'topo' Muniz"
-__copyright__   = "Copyright 2016"
+__copyright__   = "Copyright 2017"
 __credits__     = []
 __license__     = "GPL"
 __version__     = "0.1"
 __maintainer__  = "Sebastian Muniz"
 __email__       = "sebastianmuniz@gmail.com"
-__status__      = "Development"
 __description__ = "Pimped out multi-architecture CPU emulator"
 
 from traceback import format_exc
@@ -26,8 +25,7 @@ jump_types = set([cs.CS_GRP_CALL, cs.CS_GRP_JUMP, cs.CS_GRP_RET])
 
 import colorlog
 
-__all__ = ["PimpMyRide", "PimpMyRideException",
-            "LOG_LEVELS"]
+__all__ = ["PimpMyRide", "PimpMyRideException", "LOG_LEVELS"]
 
 PAGE_SIZE = 0x1000 # Default page size is 4KB
 
@@ -253,7 +251,6 @@ class PimpMyRide(object):
 
         # Create a new Unicorn instance.
         self.__uc = uc.Uc(self.architecture, self.mode)
-        print self.__uc
 
         # Create a new Capstone instance.
         self.__cs = cs.Cs(self._cs_arch, self._cs_mode) 
@@ -302,7 +299,7 @@ class PimpMyRide(object):
         if self.architecture == uc.UC_ARCH_X86:
             if self.mode == uc.UC_MODE_16:
                 self.step = 2
-                self.pack_fmt = '<H'
+                self.pack_format = '<H'
                 self.REG_PC = UC_X86_REG_PC
                 self.REG_SP = UC_X86_REG_SP
                 self.REG_RA = 0
@@ -310,7 +307,7 @@ class PimpMyRide(object):
                 self.REG_ARGS = []
             elif self.mode == uc.UC_MODE_32:
                 self.step = 4
-                self.pack_fmt = '<I'
+                self.pack_format = '<I'
                 self.REG_PC = UC_X86_REG_EIP
                 self.REG_SP = UC_X86_REG_ESP
                 self.REG_RA = 0
@@ -318,7 +315,7 @@ class PimpMyRide(object):
                 self.REG_ARGS = []
             elif self.mode == uc.UC_MODE_64:
                 self.step = 8
-                self.pack_fmt = '<Q'
+                self.pack_format = '<Q'
                 self.REG_PC = UC_X86_REG_RIP
                 self.REG_SP = UC_X86_REG_RSP
                 self.REG_RA = 0
@@ -330,12 +327,15 @@ class PimpMyRide(object):
                     self.REG_ARGS = [UC_X86_REG_RCX, UC_X86_REG_RDX, UC_X86_REG_R8, UC_X86_REG_R9]
 
         elif self.architecture == uc.UC_ARCH_ARM:
+            #
+            # ARM (thumb and normal mode) architecture definitions.
+            #
             if self.mode == uc.UC_MODE_ARM:
                 self.step = 4
-                self.pack_fmt = '<I'
+                self.pack_format = '<I'
             elif self.mode == uc.UC_MODE_THUMB:
                 self.step = 2
-                self.pack_fmt = '<H'
+                self.pack_format = '<H'
             self.REG_PC = UC_ARM_REG_PC
             self.REG_SP = UC_ARM_REG_SP
             self.REG_RA = UC_ARM_REG_LR
@@ -343,8 +343,11 @@ class PimpMyRide(object):
             self.REG_ARGS = [UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3]
 
         elif self.architecture == uc.UC_ARCH_ARM64:
+            #
+            # ARM 64bits architecture definitions.
+            #
             self.step = 8 
-            self.pack_fmt = '<Q'
+            self.pack_format = '<Q'
             self.REG_PC = UC_ARM64_REG_PC
             self.REG_SP = UC_ARM64_REG_SP
             self.REG_RA = UC_ARM64_REG_LR
@@ -353,12 +356,15 @@ class PimpMyRide(object):
                     UC_ARM64_REG_X4, UC_ARM64_REG_X5, UC_ARM64_REG_X6, UC_ARM64_REG_X7]
 
         elif self.architecture == uc.UC_ARCH_MIPS:
+            #
+            # MIPS architecture definitions.
+            #
             if self.mode == uc.UC_MODE_MIPS32:
                 self.step = 4
-                self.pack_fmt = '<I'
+                self.pack_format = '<I'
             elif self.mode == uc.UC_MODE_MIPS64:
                 self.step = 8
-                self.pack_fmt = '<Q'
+                self.pack_format = '<Q'
             self.REG_PC = UC_MIPS_REG_PC
             self.REG_SP = UC_MIPS_REG_SP
             self.REG_RA = UC_MIPS_REG_RA
@@ -544,11 +550,11 @@ class PimpMyRide(object):
         return reg_map.get(reg_name, 0x11223344)
 
     def read_register(self, reg_name):
-        """..."""
+        """Return the value of the register specified by its name."""
         reg_idx = self._reg_map(reg_name)
         reg_val = self.__uc.reg_read(reg_idx)
-        #print "_" * 40
-        #self.logger.info("Requesting register %s = 0x%08X" % (reg_name, reg_val))
+        print "_" * 50
+        self.logger.info("Requesting register %s = 0x%08X" % (reg_name, reg_val))
 
         return reg_val
 
@@ -703,7 +709,8 @@ class PimpMyRide(object):
     def write_register(self, register, value):
         """Write the specified value into the specified register."""
         reg_idx = self._reg_map(register)
-        #self.logger.debug("New register value %s (%d) = 0x%08X" % (register, reg_idx, value))
+        print "_" * 50
+        self.logger.info("Writing register %s = 0x%08X" % (register, value))
         self.__uc.reg_write(reg_idx, value)
 
     def result(self):

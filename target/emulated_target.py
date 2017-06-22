@@ -24,6 +24,8 @@ from .target import Target
 from .target import TARGET_RUNNING, TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
 from gdbserver import signals
 from utility import conversion
+from gdbserver.utility import *
+
 
 # Maps the fault code found in the IPSR to a GDB signal value.
 FAULT = [
@@ -48,8 +50,8 @@ FAULT = [
 # for these combined registers has the key of 'cfbp'.
 CORE_REGISTER = {
                 'rax' : 0,
-                'rbx' : 1,
-                'rcx' : 2,
+                'rcx' : 1,
+                'rbx' : 2,
                 'rdx' : 3,
                 'rsi' : 4,
                 'rdi' : 5,
@@ -140,8 +142,8 @@ class EmulatedTargetX86_64(Target):
     regs_general = [
         #            Name       bitsize     type            group
         RegisterInfo('rax',   32,         'int',          'general'),
-        RegisterInfo('rbx',   32,         'int',          'general'),
         RegisterInfo('rcx',   32,         'int',          'general'),
+        RegisterInfo('rbx',   32,         'int',          'general'),
         RegisterInfo('rdx',   32,         'int',          'general'),
         RegisterInfo('rsi',   32,         'int',          'general'),
         RegisterInfo('rdi',   32,         'int',          'general'),
@@ -341,6 +343,7 @@ class EmulatedTargetX86_64(Target):
 
             self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
 
+        print resp
         return resp
 
     def registerNameToIndex(self, reg):
@@ -411,7 +414,15 @@ class EmulatedTargetX86_64(Target):
         return reg_vals
 
     def setRegisterContext(self, data):
+        """Store the specified values for the appropriate registers."""
+        data = hexDecode(data)
+        regs_values = struct.unpack("<" + "I" * (len(data)/4), data)
+        for i, value in enumerate(regs_values):
+            #self.logger.error("%s (idx 0x%X) : 0x%X" % (
+            #    self.regs_general[i].name, i, value))
+            self.emu.write_register(self.regs_general[i].name, value)
         return
+
 
     def setRegister(self, reg, data):
         return

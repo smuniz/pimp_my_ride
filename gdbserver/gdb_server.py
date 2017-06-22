@@ -653,7 +653,7 @@ class GDBServer(threading.Thread):
 
     def setRegisters(self, data):
         """Store the value of a list of registers."""
-        self.target.setRegisterContext(data)
+        self.target.setRegisterContext(data[:-3])
         return self.createRSPPacket("OK")
 
     def handleQuery(self, msg):
