@@ -562,7 +562,6 @@ class GDBServer(threading.Thread):
 
         return data
 
-
     def getMemory(self, data):
         split = data.split(',')
         addr = int(split[0], 16)

@@ -297,9 +297,10 @@ class PimpMyRide(object):
 
     def _setup_registers(self):
         if self.architecture == uc.UC_ARCH_X86:
+            self.pack_endian = '<'
             if self.mode == uc.UC_MODE_16:
                 self.step = 2
-                self.pack_format = '<H'
+                self.pack_format = 'H'
                 self.REG_PC = UC_X86_REG_PC
                 self.REG_SP = UC_X86_REG_SP
                 self.REG_RA = 0
@@ -307,7 +308,7 @@ class PimpMyRide(object):
                 self.REG_ARGS = []
             elif self.mode == uc.UC_MODE_32:
                 self.step = 4
-                self.pack_format = '<I'
+                self.pack_format = 'I'
                 self.REG_PC = UC_X86_REG_EIP
                 self.REG_SP = UC_X86_REG_ESP
                 self.REG_RA = 0
@@ -315,7 +316,7 @@ class PimpMyRide(object):
                 self.REG_ARGS = []
             elif self.mode == uc.UC_MODE_64:
                 self.step = 8
-                self.pack_format = '<Q'
+                self.pack_format = 'Q'
                 self.REG_PC = UC_X86_REG_RIP
                 self.REG_SP = UC_X86_REG_RSP
                 self.REG_RA = 0
@@ -330,12 +331,13 @@ class PimpMyRide(object):
             #
             # ARM (thumb and normal mode) architecture definitions.
             #
+            self.pack_endian = '<'
             if self.mode == uc.UC_MODE_ARM:
                 self.step = 4
-                self.pack_format = '<I'
+                self.pack_format = 'I'
             elif self.mode == uc.UC_MODE_THUMB:
                 self.step = 2
-                self.pack_format = '<H'
+                self.pack_format = 'H'
             self.REG_PC = UC_ARM_REG_PC
             self.REG_SP = UC_ARM_REG_SP
             self.REG_RA = UC_ARM_REG_LR
@@ -347,7 +349,8 @@ class PimpMyRide(object):
             # ARM 64bits architecture definitions.
             #
             self.step = 8 
-            self.pack_format = '<Q'
+            self.pack_format = 'Q'
+            self.pack_endian = '<'
             self.REG_PC = UC_ARM64_REG_PC
             self.REG_SP = UC_ARM64_REG_SP
             self.REG_RA = UC_ARM64_REG_LR
@@ -359,12 +362,13 @@ class PimpMyRide(object):
             #
             # MIPS architecture definitions.
             #
+            self.pack_endian = '<'
             if self.mode == uc.UC_MODE_MIPS32:
                 self.step = 4
-                self.pack_format = '<I'
+                self.pack_format = 'I'
             elif self.mode == uc.UC_MODE_MIPS64:
                 self.step = 8
-                self.pack_format = '<Q'
+                self.pack_format = 'Q'
             self.REG_PC = UC_MIPS_REG_PC
             self.REG_SP = UC_MIPS_REG_SP
             self.REG_RA = UC_MIPS_REG_RA

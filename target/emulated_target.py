@@ -180,6 +180,10 @@ class EmulatedTargetX86_64(Target):
 
         self.emu = emu
 
+        self.endian = emu.endian
+        self.pack_format = emu.pack_format
+        self.step = emu.step
+
         self.state = None
 
     #def setFlash(self, flash):
@@ -327,9 +331,6 @@ class EmulatedTargetX86_64(Target):
         """Callback function when breakpoints are hit."""
         self.logger.warning("I've hit a breakpoint at 0x%08X" % address)
         self.state = TARGET_HALTED
-        #self.createRSPPacket("S05")
-        #self.createRSPPacket(self.getTResponse())
-        #raise Exception("matanga")
 
     def getRegisterContext(self):
         """Return hexadecimal dump of registers as expected by GDB."""
@@ -337,16 +338,11 @@ class EmulatedTargetX86_64(Target):
         self.logger.debug("GDB getting register context")
         resp = ''
         reg_num_list = map(lambda reg:reg.reg_num, self.register_list)
-        print "\n*************>>>", reg_num_list
 
-        #vals = self.readCoreRegistersRaw(reg_num_list)
-        #print("Vals: %s" % vals)
-        #for reg, regValue in zip(self.register_list, vals): # XXX original
         for idx, reg in enumerate(self.register_list):
-            #regName = self.register_list[reg].name
             regValue = self.emu.read_register(reg.name)
 
-            resp += struct.pack("<Q", regValue).encode("hex") # conversion.intToHex8(regValue) # FIXME
+            resp += struct.pack(self.endian + self.pack_format, regValue).encode("hex") 
 
             self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
 
@@ -424,7 +420,7 @@ class EmulatedTargetX86_64(Target):
         """Store the specified values for the appropriate registers."""
         data = hexDecode(data)
         #regs_values = struct.unpack("<" + "I" * (len(data)/4), data)
-        regs_values = struct.unpack("<" + "Q" * (len(data)/8), data)
+        regs_values = struct.unpack(self.endian + self.pack_format * (len(data)/self.step), data)
         for i, value in enumerate(regs_values):
             self.emu.write_register(self.regs_general[i].name, value)
         return
@@ -453,11 +449,11 @@ class EmulatedTargetX86_64(Target):
         resp.append("T0506:0 *,")
 
         regValue = self.emu.read_register("rsp")
-        enc_reg = struct.pack("<Q", regValue).encode("hex")
+        enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
         resp.append("07:" + enc_reg)
 
         regValue = self.emu.read_register("rip")
-        enc_reg = struct.pack("<Q", regValue).encode("hex")
+        enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
         resp.append("10:" + enc_reg)
 
         resp.append("thread:26a ")

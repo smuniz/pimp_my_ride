@@ -264,7 +264,6 @@ class EmulatedTargetMips(Target):
 
     def flush(self):
         # XXX Is there something else to do here?
-        ##self.transport.flush()
         pass
 
     def readIDCode(self):
@@ -347,9 +346,6 @@ class EmulatedTargetMips(Target):
         """Callback function when breakpoints are hit."""
         self.logger.error("I've hit a breakpoint at 0x%08X" % address)
         self.state = TARGET_HALTED
-        #self.createRSPPacket("S05")
-        #self.createRSPPacket(self.getTResponse())
-        #raise Exception("matanga")
 
     def getRegisterContext(self):
         """Return hexadecimal dump of registers as expected by GDB."""
@@ -357,21 +353,12 @@ class EmulatedTargetMips(Target):
         self.logger.debug("GDB getting register context")
         resp = ''
         reg_num_list = map(lambda reg:reg.reg_num, self.register_list)
-        print "\n*************>>>", reg_num_list
+        #print "\n*************>>>", reg_num_list
 
-        #vals = self.readCoreRegistersRaw(reg_num_list)
-        #print("Vals: %s" % vals)
-        #for reg, regValue in zip(self.register_list, vals): # XXX original
         for idx, reg in enumerate(self.register_list):
-            #regName = self.register_list[reg].name
             regValue = self.emu.read_register(reg.name)
-            #regValue = idx
 
-            #resp += struct.pack("<Q", regValue).encode("hex") # conversion.intToHex8(regValue) # FIXME
-            resp += struct.pack(">I", regValue).encode("hex") 
-            #resp += conversion.intToHex16(regValue) # FIXME
-
-            #self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
+            resp += struct.pack(self.endian + self.pack_format, regValue).encode("hex") 
 
         return resp
 
@@ -472,8 +459,7 @@ class EmulatedTargetMips(Target):
             The current value of the important registers (sp, lr, pc).
         """
         return "T05" # TODO FIXME
-        fmt = "<Q"
-        fmt = ">I"
+        fmt = self.endian + self.pack_format
         
         resp = []
         resp.append("T0506:0 *,")
