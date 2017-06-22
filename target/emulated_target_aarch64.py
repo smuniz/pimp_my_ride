@@ -293,7 +293,7 @@ class EmulatedTargetAArch64(Target):
         self.emu.stop()
         return
 
-    def step(self):
+    def single_step(self):
         return
 
     def resume(self, count=0):

@@ -312,7 +312,7 @@ class GDBServer(threading.Thread):
             return self.handleGeneralSet(msg[2:]), 1, 0
 
         elif msg[1] == 'S' or msg[1] == 's':
-            return self.step()
+            return self.single_step()
 
         elif msg[1] == 'v':
             return self.flashOp(msg[2:]), 1, 0
@@ -451,10 +451,10 @@ class GDBServer(threading.Thread):
         print "--------->", val
         return self.createRSPPacket(val), 0, 0
 
-    def step(self):
+    def single_step(self):
         self.ack()
         self.logger.debug("GDB step")
-        self.target.step(not self.step_into_interrupt)
+        self.target.single_step(not self.step_into_interrupt)
         return self.createRSPPacket(self.target.getTResponse()), 0, 0
 
     def halt(self):

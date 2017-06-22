@@ -40,24 +40,40 @@ FAULT = [
          ]
 
 CORE_REGISTER = {
-                'rax' : 0,
-                'rcx' : 1,
-                'rbx' : 2,
-                'rdx' : 3,
-                'rsi' : 4,
-                'rdi' : 5,
-                'rbp' : 6,
-                'rsp' : 7,
-                'r8'  : 8,
-                'r9'  : 9,
-                'r10' : 10,
-                'r11' : 11,
-                'r12' : 12,
-                'r13' : 13,
-                'r14' : 14,
-                'r15' : 15,
-                'rip' : 16,
-                 }
+                "r0"    : 0,
+                "r1"    : 1,
+                "r2"    : 2,
+                "r3"    : 3,
+                "r4"    : 4,
+                "r5"    : 5,
+                "r6"    : 6,
+                "r7"    : 7,
+                "r8"    : 8,
+                "r9"    : 9,
+                "r10"   : 10,
+                "r11"   : 11,
+                "r12"   : 12,
+                "r13"   : 13,
+                "r14"   : 14,
+                "r15"   : 15,
+                #"r16"   : 16,
+                #"r17"   : 17,
+                #"r18"   : 18,
+                #"r19"   : 19,
+                #"r20"   : 20,
+                #"r21"   : 21,
+                #"r22"   : 22,
+                #"r23"   : 23,
+                #"r24"   : 24,
+                #"r25"   : 25,
+                #"r26"   : 26,
+                #"r27"   : 27,
+                #"r28"   : 28,
+                #"r29"   : 29,
+                #"r30"   : 30,
+                #"r31"   : 31,
+                #"pc"    : 32,
+                }
 
 
 class EmulatedTargetARM(Target):
@@ -75,31 +91,43 @@ class EmulatedTargetARM(Target):
 
     regs_general = [
         #            Name       bitsize     type            group
-        RegisterInfo('rax',   32,         'int',          'general'),
-        RegisterInfo('rcx',   32,         'int',          'general'),
-        RegisterInfo('rbx',   32,         'int',          'general'),
-        RegisterInfo('rdx',   32,         'int',          'general'),
-        RegisterInfo('rsi',   32,         'int',          'general'),
-        RegisterInfo('rdi',   32,         'int',          'general'),
-        RegisterInfo('rbp',   32,         'int',          'general'),
-        RegisterInfo('rsp',   32,         'int',          'general'),
-        RegisterInfo('r8' ,   32,         'int',          'general'),
-        RegisterInfo('r9' ,   32,         'int',          'general'),
-        RegisterInfo('r10',   32,         'int',          'general'),
-        RegisterInfo('r11',   32,         'int',          'general'),
-        RegisterInfo('r12',   32,         'int',          'general'),
-        RegisterInfo('r13',   32,         'data_ptr',     'general'),
-        RegisterInfo('r14',   32,         'int',          'general'),
-        RegisterInfo('r15',   32,         'code_ptr',     'general'),
-        RegisterInfo('rip',   32,         'int',          'general'),
-        #RegisterInfo('msp',     32,         'int',          'general'),
-        #RegisterInfo('psp',     32,         'int',          'general'),
-        #RegisterInfo('primask', 32,         'int',          'general'),
-        #RegisterInfo('control', 32,         'int',          'general'),
+        RegisterInfo("r0"  ,   32,         'int',          'general'),
+        RegisterInfo("r1"  ,   32,         'int',          'general'),
+        RegisterInfo("r2"  ,   32,         'int',          'general'),
+        RegisterInfo("r3"  ,   32,         'int',          'general'),
+        RegisterInfo("r4"  ,   32,         'int',          'general'),
+        RegisterInfo("r5"  ,   32,         'int',          'general'),
+        RegisterInfo("r6"  ,   32,         'int',          'general'),
+        RegisterInfo("r7"  ,   32,         'int',          'general'),
+        RegisterInfo("r8"  ,   32,         'int',          'general'),
+        RegisterInfo("r9"  ,   32,         'int',          'general'),
+        RegisterInfo("r10" ,   32,         'int',          'general'),
+        RegisterInfo("r11" ,   32,         'int',          'general'),
+        RegisterInfo("r12" ,   32,         'int',          'general'),
+        RegisterInfo("r13" ,   32,         'data_ptr',     'general'),
+        RegisterInfo("r14" ,   32,         'int',          'general'),
+        RegisterInfo("r15" ,   32,         'code_ptr',     'general'),
+        #RegisterInfo("r16" ,   32,         'int',          'general'),
+        #RegisterInfo("r17" ,   32,         'int',          'general'),
+        #RegisterInfo("r18" ,   32,         'int',          'general'),
+        #RegisterInfo("r19" ,   32,         'int',          'general'),
+        #RegisterInfo("r20" ,   32,         'int',          'general'),
+        #RegisterInfo("r21" ,   32,         'int',          'general'),
+        #RegisterInfo("r22" ,   32,         'int',          'general'),
+        #RegisterInfo("r23" ,   32,         'int',          'general'),
+        #RegisterInfo("r24" ,   32,         'int',          'general'),
+        #RegisterInfo("r25" ,   32,         'int',          'general'),
+        #RegisterInfo("r26" ,   32,         'int',          'general'),
+        #RegisterInfo("r27" ,   32,         'int',          'general'),
+        #RegisterInfo("r28" ,   32,         'int',          'general'),
+        #RegisterInfo("r29" ,   32,         'int',          'general'),
+        #RegisterInfo("r30" ,   32,         'data_ptr',     'general'),
+        #RegisterInfo("r31" ,   32,         'int',          'general'),
+        #RegisterInfo("pc"  ,   32,         'int',          'general'),
         ]
 
     def __init__(self, emu, log_level=logging.DEBUG):
-        super(EmulatedTargetX86_64, self).__init__(emu=emu)
+        super(EmulatedTargetARM, self).__init__(emu=emu)
 
         # setup logging
         log_format = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
@@ -185,7 +213,7 @@ class EmulatedTargetARM(Target):
         self.emu.stop()
         return
 
-    def step(self):
+    def single_step(self):
         return
 
     def resume(self, count=0):

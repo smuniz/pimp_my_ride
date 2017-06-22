@@ -107,6 +107,8 @@ class PimpMyRide(object):
                 cs_mode = cs.CS_MODE_MIPS32 + cs.CS_MODE_BIG_ENDIAN
 
         elif architecture == "ARM":
+            #if self.mode == uc.UC_MODE_ARM:
+            #elif self.mode == uc.UC_MODE_THUMB:
             cur_arch = uc.UC_ARCH_ARM
             cur_mode = uc.UC_MODE_ARM
 
@@ -595,6 +597,51 @@ class PimpMyRide(object):
                     "r14" : UC_X86_REG_R14,
                     "r15" : UC_X86_REG_R15,
                 }
+
+        elif self.architecture == uc.UC_ARCH_ARM:
+            if self.mode == uc.UC_MODE_ARM:
+                reg_map = {
+                    "r0"    : UC_ARM64_REG_W0, #= 199
+                    "r1"    : UC_ARM64_REG_W1, #= 200
+                    "r2"    : UC_ARM64_REG_W2, #= 201
+                    "r3"    : UC_ARM64_REG_W3, #= 202
+                    "r4"    : UC_ARM64_REG_W4, #= 203
+                    "r5"    : UC_ARM64_REG_W5, #= 204
+                    "r6"    : UC_ARM64_REG_W6, #= 205
+                    "r7"    : UC_ARM64_REG_W7, #= 206
+                    "r8"    : UC_ARM64_REG_W8, #= 207
+                    "r9"    : UC_ARM64_REG_W9, #= 208
+                    "r10"   : UC_ARM64_REG_W10, #= 209
+                    "r11"   : UC_ARM64_REG_W11, #= 210
+                    "r12"   : UC_ARM64_REG_W12, #= 211
+                    "r13"   : UC_ARM64_REG_W13, #= 212
+                    "r14"   : UC_ARM64_REG_W14, #= 213
+                    "r15"   : UC_ARM64_REG_W15, #= 214
+                    "r16"   : UC_ARM64_REG_W16, #= 215
+                    "r17"   : UC_ARM64_REG_W17, #= 216
+                    "r18"   : UC_ARM64_REG_W18, #= 217
+                    "r19"   : UC_ARM64_REG_W19, #= 218
+                    "r20"   : UC_ARM64_REG_W20, #= 219
+                    "r21"   : UC_ARM64_REG_W21, #= 220
+                    "r22"   : UC_ARM64_REG_W22, #= 221
+                    "r23"   : UC_ARM64_REG_W23, #= 222
+                    "r24"   : UC_ARM64_REG_W24, #= 223
+                    "r25"   : UC_ARM64_REG_W25, #= 224
+                    "r26"   : UC_ARM64_REG_W26, #= 225
+                    "r27"   : UC_ARM64_REG_W27, #= 226
+                    "r28"   : UC_ARM64_REG_W28, #= 227
+
+                    "r29"   : UC_ARM64_REG_W29, #= 1
+                    "r30"   : UC_ARM64_REG_W30, #= 2
+
+                    "r31"    : UC_ARM64_REG_SP, #= 4
+                    #"xzr"   : UC_ARM64_REG_XZR, #= 7
+
+                    "pc"    : UC_ARM64_REG_PC, #= 260
+                    }
+            elif self.mode == uc.UC_MODE_THUMB:
+                raise Exception("Register map for ARM thumb-mode not implemented")
+
         else:
             raise Exception("Register map not implemented")
 
