@@ -470,11 +470,11 @@ class EmulatedTargetAArch64(Target):
         resp = []
         resp.append("T0506:0 *,")
 
-        regValue = self.emu.read_register("rsp")
+        regValue = self.emu.read_register("sp")
         enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
         resp.append("07:" + enc_reg)
 
-        regValue = self.emu.read_register("rip")
+        regValue = self.emu.read_register("pc")
         enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
         resp.append("10:" + enc_reg)
 
@@ -483,6 +483,7 @@ class EmulatedTargetAArch64(Target):
 
         self.logger.debug("T Response : %s" % resp)
         return ";".join(resp)
+
         #if gdbInterrupt:
         #    response = 'T' + conversion.intToHex2(signals.SIGINT)
         #else:

@@ -566,7 +566,8 @@ class PimpMyRide(object):
                 "r29"   : UC_ARM64_REG_X29, #= 1
                 "r30"   : UC_ARM64_REG_X30, #= 2
 
-                "r31"    : UC_ARM64_REG_SP, #= 4
+                "r31"   : UC_ARM64_REG_SP, #= 4
+                "sp"    : UC_ARM64_REG_SP, #= 4
                 #"xzr"   : UC_ARM64_REG_XZR, #= 7
 
                 "pc"    : UC_ARM64_REG_PC, #= 260
@@ -635,6 +636,7 @@ class PimpMyRide(object):
                     "r30"   : UC_ARM64_REG_W30, #= 2
 
                     "r31"    : UC_ARM64_REG_SP, #= 4
+                    "sp"    : UC_ARM64_REG_SP, #= 4
                     #"xzr"   : UC_ARM64_REG_XZR, #= 7
 
                     "pc"    : UC_ARM64_REG_PC, #= 260
@@ -651,8 +653,8 @@ class PimpMyRide(object):
         """Return the value of the register specified by its name."""
         reg_idx = self._reg_map(reg_name)
         reg_val = self.__uc.reg_read(reg_idx)
-        print "_" * 50
-        self.logger.info("Requesting register %s = 0x%08X" % (reg_name, reg_val))
+        #print "_" * 50
+        #self.logger.info("Requesting register %s = 0x%08X" % (reg_name, reg_val))
 
         return reg_val
 

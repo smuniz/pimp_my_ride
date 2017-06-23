@@ -56,9 +56,9 @@ CORE_REGISTER = {
                 "r13"   : 13,
                 "r14"   : 14,
                 "r15"   : 15,
-                #"r16"   : 16,
-                #"r17"   : 17,
-                #"r18"   : 18,
+                "r16"   : 16,
+                "r17"   : 17,
+                "r18"   : 18,
                 #"r19"   : 19,
                 #"r20"   : 20,
                 #"r21"   : 21,
@@ -107,9 +107,9 @@ class EmulatedTargetARM(Target):
         RegisterInfo("r13" ,   32,         'data_ptr',     'general'),
         RegisterInfo("r14" ,   32,         'int',          'general'),
         RegisterInfo("r15" ,   32,         'code_ptr',     'general'),
-        #RegisterInfo("r16" ,   32,         'int',          'general'),
-        #RegisterInfo("r17" ,   32,         'int',          'general'),
-        #RegisterInfo("r18" ,   32,         'int',          'general'),
+        RegisterInfo("r16" ,   32,         'int',          'general'),
+        RegisterInfo("r17" ,   32,         'int',          'general'),
+        RegisterInfo("r18" ,   32,         'int',          'general'),
         #RegisterInfo("r19" ,   32,         'int',          'general'),
         #RegisterInfo("r20" ,   32,         'int',          'general'),
         #RegisterInfo("r21" ,   32,         'int',          'general'),
@@ -179,10 +179,10 @@ class EmulatedTargetARM(Target):
             # Build register_list and targetXML
             self.register_list = []
             xml_root = Element('target')
-#            xml_regs_general = SubElement(xml_root, "feature", name="org.gnu.gdb.arm.m-profile")
+            xml_regs_general = SubElement(xml_root, "feature", name="org.gnu.gdb.arm.m-profile")
             for reg in self.regs_general:
                 self.register_list.append(reg)
-#                SubElement(xml_regs_general, 'reg', **reg.gdb_xml_attrib)
+                SubElement(xml_regs_general, 'reg', **reg.gdb_xml_attrib)
 #            # Check if target has ARMv7 registers
 #            if self.core_type in  (ARM_CortexM3, ARM_CortexM4):
 #                for reg in self.regs_system_armv7_only:
@@ -194,7 +194,7 @@ class EmulatedTargetARM(Target):
 #                for reg in self.regs_float:
 #                    self.register_list.append(reg)
 #                    SubElement(xml_regs_general, 'reg', **reg.gdb_xml_attrib)
-#            self.targetXML = '<?xml version="1.0"?><!DOCTYPE feature SYSTEM "gdb-target.dtd">' + tostring(xml_root)
+            self.targetXML = '<?xml version="1.0"?><!DOCTYPE feature SYSTEM "gdb-target.dtd">' + tostring(xml_root)
 
 
     def info(self, request):
@@ -279,13 +279,15 @@ class EmulatedTargetARM(Target):
         self.logger.debug("GDB getting register context")
         resp = ''
         reg_num_list = map(lambda reg:reg.reg_num, self.register_list)
+        print ">"*20, reg_num_list
 
         for idx, reg in enumerate(self.register_list):
             regValue = self.emu.read_register(reg.name)
 
-            resp += struct.pack(self.endian + self.pack_format, regValue).encode("hex") 
+            #resp += struct.pack(self.endian + self.pack_format, regValue).encode("hex") 
+            resp += struct.pack(self.endian + self.pack_format, idx).encode("hex") 
 
-            self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
+            #self.logger.debug("GDB reg: %s = 0x%X", reg.name, regValue)
 
         print resp
         return resp
@@ -376,7 +378,7 @@ class EmulatedTargetARM(Target):
             regName = self.register_list[reg].name
             regValue = self.emu.read_register(regName)  #self.readCoreRegisterRaw(regName)
             resp = conversion.intToHex8(regValue)
-            self.logger.debug("GDB reg: %s = 0x%X", regName, regValue)
+            #self.logger.debug("GDB reg: %s = 0x%X", regName, regValue)
         return resp
 
     def getTResponse(self, gdbInterrupt = False):
@@ -389,11 +391,11 @@ class EmulatedTargetARM(Target):
         resp = []
         resp.append("T0506:0 *,")
 
-        regValue = self.emu.read_register("rsp")
+        regValue = self.emu.read_register("sp")
         enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
         resp.append("07:" + enc_reg)
 
-        regValue = self.emu.read_register("rip")
+        regValue = self.emu.read_register("pc")
         enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
         resp.append("10:" + enc_reg)
 
@@ -402,6 +404,7 @@ class EmulatedTargetARM(Target):
 
         self.logger.debug("T Response : %s" % resp)
         return ";".join(resp)
+
         #if gdbInterrupt:
         #    response = 'T' + conversion.intToHex2(signals.SIGINT)
         #else:

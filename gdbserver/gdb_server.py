@@ -817,7 +817,9 @@ class GDBServer(threading.Thread):
             return self.createRSPPacket("")
 
     def handleQueryXML(self, query, offset, size):
+        print "X" * 200
         self.logger.debug('GDB query %s: offset: %s, size: %s', query, offset, size)
+        raise Exception("hola manola")
         xml = ''
         if query == 'memory_map':
             xml = self.target.memoryMapXML

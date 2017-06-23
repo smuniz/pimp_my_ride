@@ -185,7 +185,8 @@ def main():
         # Set tracing all instructions with internal callback.
         emu.trace_instructions()
 
-        board = Board(EmulatedTargetAArch64(emu))
+        board = Board(EmulatedTargetARM(emu))
+        #board = Board(EmulatedTargetAArch64(emu))
         #board = Board(EmulatedTargetX86_64(emu))
         #board = Board(EmulatedTargetMips(emu))
 
