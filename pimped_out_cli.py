@@ -193,7 +193,7 @@ def main():
         print "[+] Initializing GDB server..."
         gdb = GDBServer(board, gdb_server_settings)
 
-        emu.add_breakpoint_callback(gdb.target.breakpoint_callback)
+        #emu.add_breakpoint_callback(gdb.target.breakpoint_callback)
 
         while gdb.isAlive():
             gdb.join(timeout=0.5)

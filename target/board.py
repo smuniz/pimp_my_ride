@@ -34,4 +34,4 @@ class Board(object):
         This function resumes the target
         """
         print "[+] Emulation finished."
-        self.emu.stop()
+        self.target.stop()

@@ -658,7 +658,7 @@ class GDBServer(threading.Thread):
     def handleQuery(self, msg):
         """Handle query message from RSP client."""
 
-        query = msg.split(':')
+        query = msg[:-3].split(':')
         self.logger.debug('GDB received query: %s', query)
 
         if query is None:
@@ -667,7 +667,7 @@ class GDBServer(threading.Thread):
 
         if query[0] == 'Supported':
             # Save features sent by gdb.
-            self.gdb_features = query[1].split(';')
+            #self.gdb_features = query[1].split(';') # WTF is this for?
 
             # Build our list of features.
             features = []
@@ -677,10 +677,11 @@ class GDBServer(threading.Thread):
             #if hasattr(self.target, 'memoryMapXML'):
             #    features.append('qXfer:memory-map:read+')
             resp = ';'.join(features)
+            print "========>", resp
             return self.createRSPPacket(resp)
 
         elif query[0] == 'fThreadInfo':
-            return self.createRSPPacket("m26a")
+            return self.createRSPPacket("m0")
             #return self.createRSPPacket("m-1")
 
         elif query[0] == 'sThreadInfo':

@@ -31,6 +31,9 @@ class Target(object):
 
         self.emu = emu
 
+        # We want to get notified about breakpoints hit.
+        self.emu.add_breakpoint_callback(self.breakpoint_callback)
+
         self.endian = emu.pack_endian
         self.pack_format = emu.pack_format
         self.step = emu.step

@@ -71,8 +71,8 @@ CORE_REGISTER = {
                 #"r28"   : 28,
                 #"r29"   : 29,
                 #"r30"   : 30,
-                #"r31"   : 31,
-                #"pc"    : 32,
+                "r31"   : 31,
+                "pc"    : 32,
                 }
 
 
@@ -104,9 +104,9 @@ class EmulatedTargetARM(Target):
         RegisterInfo("r10" ,   32,         'int',          'general'),
         RegisterInfo("r11" ,   32,         'int',          'general'),
         RegisterInfo("r12" ,   32,         'int',          'general'),
-        RegisterInfo("r13" ,   32,         'data_ptr',     'general'),
+        RegisterInfo("r13" ,   32,         'int',          'general'),
         RegisterInfo("r14" ,   32,         'int',          'general'),
-        RegisterInfo("r15" ,   32,         'code_ptr',     'general'),
+        RegisterInfo("r15" ,   32,         'int',          'general'),
         RegisterInfo("r16" ,   32,         'int',          'general'),
         RegisterInfo("r17" ,   32,         'int',          'general'),
         RegisterInfo("r18" ,   32,         'int',          'general'),
@@ -122,8 +122,8 @@ class EmulatedTargetARM(Target):
         #RegisterInfo("r28" ,   32,         'int',          'general'),
         #RegisterInfo("r29" ,   32,         'int',          'general'),
         #RegisterInfo("r30" ,   32,         'data_ptr',     'general'),
-        #RegisterInfo("r31" ,   32,         'int',          'general'),
-        #RegisterInfo("pc"  ,   32,         'int',          'general'),
+        RegisterInfo("r31" ,   32,         'data_ptr',     'general'),
+        RegisterInfo("pc"  ,   32,         'code_ptr',     'general'),
         ]
 
     def __init__(self, emu, log_level=logging.DEBUG):
@@ -389,21 +389,22 @@ class EmulatedTargetARM(Target):
         """
         #return "T05" # TODO FIXME
         resp = []
-        resp.append("T0506:0 *,")
+        resp.append("T05")
 
-        regValue = self.emu.read_register("sp")
-        enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
-        resp.append("07:" + enc_reg)
+        #regValue = self.emu.read_register("sp")
+        #enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
+        #resp.append("07:" + enc_reg)
 
-        regValue = self.emu.read_register("pc")
-        enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
-        resp.append("10:" + enc_reg)
+        #regValue = self.emu.read_register("pc")
+        #enc_reg = struct.pack(self.endian + self.pack_format, regValue).encode("hex")
+        #resp.append("10:" + enc_reg)
 
-        resp.append("thread:26a ")
-        resp.append("core:1")
+        resp.append("thread:00;")
+        #resp.append("core:1")
 
         self.logger.debug("T Response : %s" % resp)
-        return ";".join(resp)
+        #return ";".join(resp)
+        return "".join(resp)
 
         #if gdbInterrupt:
         #    response = 'T' + conversion.intToHex2(signals.SIGINT)

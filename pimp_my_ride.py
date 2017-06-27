@@ -21,8 +21,6 @@ from unicorn.mips_const import *
 
 import capstone as cs
 
-jump_types = set([cs.CS_GRP_CALL, cs.CS_GRP_JUMP, cs.CS_GRP_RET])
-
 import colorlog
 
 __all__ = ["PimpMyRide", "PimpMyRideException", "LOG_LEVELS"]
@@ -822,11 +820,6 @@ class PimpMyRide(object):
         disasm = list()
         try:
             for i in self.__cs.disasm(str(opcodes), addr):
-                #print dir(i)
-                #print "group ---> %r" % i.group(cs.CS_GRP_CALL)
-                #print "groups --->", set(i.groups) & jump_types
-                #raise Exception("EADas")
-                #print dir(i.target)
                 #if i.target not in (None, i.address + i.size):
                 #    self.logger.error("a branch")
                 #else:
@@ -876,7 +869,6 @@ class PimpMyRide(object):
             else:
                 raise Exception("get PC not implemented for current architecture")
 
-            #if disasm[2] in jump_types:
             if str(disasm[0][0]) == 'jal':
                 self.logger.error("============> %r" % (str(disasm[0][0]) == 'jal'))
                 #new_pc = int(str(disasm[0][1]), 16)
